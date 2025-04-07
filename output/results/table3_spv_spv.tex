@@ -1,0 +1,24 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{7}{c}}
+                &\multicolumn{7}{c}{ln(wage) of poached manager at destination}                            \\\cmidrule(lr){2-8}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   &\multicolumn{1}{c}{(7)}   \\
+\midrule \textit{Destination firm characteristics}&            &            &            &            &            &            &            \\
+Firm size (ln)  &    0.007   &    0.009   &    0.011** &    0.025***&    0.024***&    0.020***&    0.013** \\
+                &  (0.005)   &  (0.005)   &  (0.005)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   \\
+Growth rate (empl)&            &    0.011** &    0.012** &    0.019***&    0.019***&    0.021***&    0.024***\\
+                &            &  (0.005)   &  (0.005)   &  (0.005)   &  (0.005)   &  (0.005)   &  (0.005)   \\
+Quality of raided workers&            &            &    0.130***&    0.095***&    0.094***&    0.083***&    0.075***\\
+                &            &            &  (0.017)   &  (0.023)   &  (0.023)   &  (0.022)   &  (0.021)   \\
+\# raided workers (ln)&            &            &            &   -0.032***&   -0.029***&   -0.026***&   -0.027***\\
+                &            &            &            &  (0.007)   &  (0.007)   &  (0.007)   &  (0.006)   \\
+Quality of raided workers $\times$ \# raided workers (ln)&            &            &            &    0.026** &    0.029** &    0.023*  &    0.011   \\
+                &            &            &            &  (0.012)   &  (0.012)   &  (0.012)   &  (0.012)   \\
+\textbf{Manager controls} \\ Origin wage &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Experience      &            &            &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &            &            &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm controls}  \\ Wage premium &            &            &            &            &            &            &   \cmark   \\
+ \\ Obs         &     2943   &     2943   &     2943   &     2943   &     2943   &     2943   &     2943   \\
+R-Squared       &    0.646   &    0.646   &    0.655   &    0.664   &    0.665   &    0.680   &    0.700   \\
+\end{tabular}
+}

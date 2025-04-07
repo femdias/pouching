@@ -1,0 +1,17 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{4}{c}}
+                &\multicolumn{4}{c}{Outcome: Manager ln(salary) at destination}\\\cmidrule(lr){2-5}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   \\
+\midrule        &            &            &            &            \\
+Dest. firm size (ln)&    0.068***&    0.046***&    0.044***&    0.037***\\
+                &  (0.013)   &  (0.009)   &  (0.009)   &  (0.008)   \\
+Dest. firm empl. growth rate&   -0.013   &    0.010   &    0.012   &    0.013   \\
+                &  (0.021)   &  (0.014)   &  (0.014)   &  (0.014)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &            &            &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   \\
+ \\ Obs         &     2419   &     2419   &     2419   &     2419   \\
+R-Squared       &    0.012   &    0.573   &    0.576   &    0.613   \\
+\end{tabular}
+}

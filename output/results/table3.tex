@@ -1,0 +1,23 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+                &\multicolumn{3}{c}{Mgr to mgr}        &\multicolumn{2}{c}{Mgr to non-mgr}&\multicolumn{3}{c}{Non-mgr to mgr}    \\\cmidrule(lr){2-4}\cmidrule(lr){5-6}\cmidrule(lr){7-9}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   &\multicolumn{1}{c}{(7)}   &\multicolumn{1}{c}{(8)}   \\
+\midrule \textit{Destination firm characteristics}&            &            &            &            &            &            &            &            \\
+Firm size (ln)  &    0.018***&    0.017***&    0.014** &    0.027***&    0.015** &    0.023***&    0.014** &    0.011   \\
+                &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.009)   \\
+Growth rate (empl)&    0.015** &    0.018***&    0.023***&    0.031***&    0.013   &    0.017** &    0.023***&    0.009   \\
+                &  (0.007)   &  (0.007)   &  (0.007)   &  (0.007)   &  (0.009)   &  (0.009)   &  (0.007)   &  (0.009)   \\
+Quality of raided workers&    0.145***&    0.149***&    0.122***&    0.098***&    0.099***&    0.046** &    0.122***&    0.018   \\
+                &  (0.016)   &  (0.016)   &  (0.015)   &  (0.019)   &  (0.016)   &  (0.020)   &  (0.015)   &  (0.028)   \\
+\# raided workers (ln)&            &            &            &   -0.033***&            &    0.000   &            &   -0.024** \\
+                &            &            &            &  (0.006)   &            &  (0.007)   &            &  (0.012)   \\
+Quality of raided workers $\times$ \# raided workers (ln)&            &            &            &    0.018*  &            &    0.052***&            &    0.019   \\
+                &            &            &            &  (0.011)   &            &  (0.011)   &            &  (0.021)   \\
+\textbf{Manager controls} \\ Origin wage &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Experience      &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     2864   &     2864   &     2864   &     2864   &     2603   &     2603   &     2864   &     1260   \\
+R-Squared       &    0.702   &    0.705   &    0.722   &    0.728   &    0.630   &    0.634   &    0.722   &    0.677   \\
+\end{tabular}
+}

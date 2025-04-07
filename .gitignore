@@ -1,0 +1,21 @@
+# R files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Stata files
+.dta
+.do.stswp
+
+# General data files
+.csv
+.xlsx
+.xls
+
+# folders
+output/data/
+input/
+temp/
+
+

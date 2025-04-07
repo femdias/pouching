@@ -1,0 +1,333 @@
+READ ME TO POACHING PROJECT
+INITIAL DATE: 14 oct. 2024
+AUTHOR: Heloísa de Paula
+
+PREPARE
+Run code: rais_m.do
+Input: Lightly cleaned RAIS (daniela_group/RAIS/RAIS_Clean/RAIS_Clean_`y')
+Output: Monthly RAIS rais_m
+
+Summary of what the code does:
+* Opens lightly cleaned RAIS by year
+* Drops unnecessary variables
+* Creates hire and separation dates
+* Individual is employed in m1 if hire date <= (y-01-31) and sep_date > (y-01-31)
+-- Obs: Many sep date are NA (if there was no separation in that year). In that case, only hire date counts
+* Selects only contracts that were active in that particular month (ie emp_on_mM = 1)
+* In the case of multiple active contracts in one month, select primary contract according to following citeria:
+-- Highest earnings
+-- Highest number of contracted hours
+-- Highest tenure
+-- Random selection
+* Save dataset as rais_m_`ym'
+-- They are initially saved as rais_m_`y'm`m' and then ressaved to be in this format
+* We then organize additional variables:
+-- Create firm identifier (first 8 digits of plant identifier)
+-- Drop CBO "CBO", "IGNORADO" and remove any leading or trailing spaces in cbo02_occup
+* Remove CLASSE from the industry strings and then destring
+-- Note: cnae20_class and cnae20_subclass is only avaiable in 2006-2017
+* Create variables with 1st and 3rd digit of occupational code
+* Identify government establishments
+* Compress dataset
+* Destring cpf, plant_id and firm_id
+* Count number of employees in each establishment and firm
+* Resave dataset as rais_m_`ym'
+* Temporarily consider year dataset (append all months)
+* Identify directors if first digit of occupational code is one and is director in all employed months of the year
+* Do something similar, but director top 95 of earnings in that firm/year and director in all emp. months
+* Similar, supervisor if third digit of CBO is zero and is spv. in all employed months
+* Resave dataset as rais_m_`ym'
+
+Run code: evt_m
+Input: Monthly RAIS rais_m_`ym' (from rais_m.do)
+Output: All poaching events by type of event (type of worker that was poached, if director, director5, employee or supervisor)
+
+Summary of what the code does:
+* Opens RAIS m of one month, as well as month - 12, month -1 and month +12, binding all of these
+* Sets as panel
+* Applies criterias:
+1. Worker is employed in establishment with at least 45 months in t-1
+2. Worker is employed in same establishment in t-12 and t-1
+3. Worker is employed in different establishment in t
+4. Worker is employed in different firm in t
+5. Worker is employed in establishment with at least 45 employees in t
+6. Worker must be separated from old establishment in t (cause of separation must be terminated with just cause (10), terminated without just cause (11), resigned with just cause (20), resigned without just cause (21)
+7. Worker must be hired by new establishment in t (type of hire must be reemployment (2)
+8. Worker is employed in non-gov. establishment in t-1 and t
+9. Worker is still employed in the new establishment in t+12
+* Poaching event is defined when all criterias 1-9 is satisfied
+* Event types are defined according to role of worker in t-1 i.e. at origin firm: director (1xx), director5 (1xx or top 5%), supervisor (xxx0) or employee (not dir or spv)
+* Keep origin (lagged plant id) and destination firm (plant id in t=0)
+* Save this as evt_m/evt_m_`ym'
+* Then, we treat dir, dir5, spv and emp independently
+	-- First we deal with multiple periods: Since we require 25 months between events (12 months before, month when event happened and then 12 months after) and we have data from 2003 - 2017, we can only identify events from 2004m1 to 2016m12 and at most 7 events. Thus, we do the following:
+		- Start with first event (min pc_ym i.e. date) of that destination firm
+		- For all other rows of that destination firm, calculate differente between observed date and date of this first event
+		- Then, keep event itself and rows within a 25 month window (12 months on each side)
+		- Do the same procedure with event 2, so forth and so on
+	-- Dealing with multiple poaches in same month: from the perspective of the destination firm, if it is poaching from more than 1 origin firm, select just 1. From perspective of origin firm, if workers are poached by more than one destination firm, select just one
+* Create event identifier
+* Save by event type (evt_m_dir, evt_m_dir5, evt_m_spv, evt_m_emp)
+
+Run code: cowork_panel_m
+Input: All poaching events by type of event (evt_m) from evt_m.do, Worker AKM panel, Monthly rais from rais_m.do
+Output: Panel of workers in origin firm (cowork_panel_m)
+
+Summary of what the code does:
+* Start with evt_m (event level panel with poaching events)
+* Create ym by subtracting 12 of pc_ym (when poaching event took place)
+* List events in key_evts_m 
+* List origin plant and time (ym) 
+* Open monthly RAIS and only keep firm listed as origin firms in previous step (this is a way to create a subsample of RAIS so this is easier to work with). This way we create the panel of workers we are interested in (everybody that was in origin firm in t = -12). When then go through each RAIS from -12 to 12 and filter for only these workers
+* Create ym_rel variable (time compared to poaching event, where poaching event happens in t= 0)
+* Then, merge this with key events previously defined, so we know the origin as destination firm of these workers
+* We then include additional variables:
+-- Number of employees in t = -12
+-- Number of non-directors in t = -12
+-- Number of directors in t=-12
+-- Avg. team size
+-- Deflate wages and take logs
+-- Identifier of poached individual
+-- Identifier of poached directors that continued as directors
+-- Merge with AKM panel to get worker FE
+-- Identify raided individuals (hired in same month as pc individual, with type of hire "readmissão", dest. plant as expected in event and is employee (dir and spv == 0)
+-- Identifier of moveable worker: people who were in t=-12 (by contruction, everybody) and t =-12, but left in t>=0
+	* Another version of this checks moveable workers, but that remained in formal sector. This is done by checking that origin firm is not the same as dest. firm in t >= 0 and that dest firm is also not missing
+-- Tenure overlap
+	* First, tenure in RAIS is only reported in dec or last month of person in firm, so we created a ``running'' tenure
+	* Compute tenure of worker and pc individual and check overlap between those
+* Finally saving this as cowork_panel_m_`e'
+
+Run code: evt_panel_m.do
+Input: All poaching events by type of event (evt_m) from evt_m.do and Monthly RAIS from rais_m.do
+Output:
+
+Summary of what the code does:
+* Start with evt_m creating a panel with 12m before and after poaching event
+* List plants and dates of this panel, which are the ones we are interested in
+* Open monthly RAIS and filter for plants and periods we are interested in just listed
+* Create plant-level variables
+-- Dummy of full time contracts
+-- Dummy of directors, directors 5, spv, emp
+-- Dummy if hired in month and type "readmissao"
+-- Wages, tenure, number of dir/dir5/spv/emp among new hires
+-- Same if not new hire (retained)
+-- Colapse at plant month level
+* Relabel variables -- this is saved as d_firmvars_m_ym
+* From cowork_panel_m from previous step, create plant level variables THIRD PART
+
+Run code: poach_ind.do
+
+Reference for number of obs:
+e: spv
+ym: 620
+
+1. Information about raided workers
+Input: cowork_panel_m_`e'_`ym' - worker level panel 6,282,550 obs; ym: 528/683
+Output: rd_coworker_`e'_`ym' - event level, 117 obs; ym: 528/683
+* Number of raided coworkers
+* Wage of raided coworkers in destination firm
+* Wage of raided coworkers in origin firm
+* Quality of raided coworkers
+
+2. Destination firm: firm size and wage bill
+Input: evt_m_`e' - event level panel 28,193 obs. - and rais_m`ym' - raw RAIS, contract level; ym: 528/683
+Output: d_vars_`e'_`ym' - event level, 234 obs.; ym: 528/683
+* evt_m_`e' is used simply to list events at t=0
+* Use rais_m`ym' to look for dest. firms in t=0
+* Destination firm size
+* Destination firm wage bill
+* Ln destination firm wage bill
+
+3. Information about team size
+Input: cowork_panel_m_`e'_`ym' - worker level panel 6,282,550 obs; ym: 528/683
+Output: spvteam_`e'_`ym' - event level, 234 obs.; ym: 528/683
+* Number of coworkers in same team (same occ group) as poached spv
+* Number of coworkers that are also spv in same team (same occ group) as poached spv
+
+4. Destination firm: growth rate
+Input: evt_panel_m_`e' - event level panel 28,193 obs.
+Output: d_growth_`e' - event level panel 28,193 obs. -- THIS IS DIFFERENT FROM WHAT WE HAD IN PREVIOUS -- I THINK THIS IS WRONF=G
+* Growth rate (between t = -12 and t = -1)
+
+5. Destination firm: new hires
+Input: evt_panel_m_`e' - event level panel 28,193 obs.
+Output: size_hire_`e' - event level panel 28,193 obs. -- I THINK THIS IS WRONG
+* Count number of new hires in t = -12 
+
+6. Information about team size in DESTINATION firm
+Input: dest_panel_m_`e'_`ym' - worker level panel 2,992,306 obs.; NOTE: ym: 612/683 - and evt_panel_m_spv - event level panel 28,193 obs.
+Output: d_spvteam_`e'_`ym' - event level, 64 obs. NOTE: ym: 612/683
+* Merge dest_panel_m_`e'_`ym' to evt_panel_m_spv to keep only people that became mgr
+* Number of coworkers in same team (same occ group) as poached spv in dest. firm
+* Number of coworkers that are also spv in same team (same occ group) as poached spv in dest. firm
+
+7. Turnover
+Input: dest_panel_m_`e'_`ym' - worker level panel 2,992,306 obs.; ym: 612/683
+Output: turnover_`e'_`ym' - event id, 234 obs.; ym: 612/683
+* Calculates turnover
+
+8. Create main dataset
+Input: cowork_panel_m_`e'_`ym' - worker level panel 6,282,550 obs; ym: 612/683
+Output: poach_ind_`e'_`ym' - event level, 28,193 obs. -- this is wrong -- should be 234 for 620; ym: 612/683
+* Calculates size of origin firm
+* Includes information on quartile of worker FE
+* Number of workers above 75th perc at origin firm
+* Ratio of workers above 75th perc at origin firm
+* Number of mgrs at origin firm
+* Calculate # emp / # mgr
+* Origin firm avg AKM FE
+* Number of poached individuals
+* Wage of poached individual in destination firm
+* Wage of poached individual in origin firm (t=-12)
+* Wage of poached individual in origin firm (t=-1)
+* Quality of poached individual
+* Experience of the poached individual
+* Age of poached individual
+* Years of education of poached individual
+- Here we have 234 obs - 
+* Merge to auxiliary dataset
+	- rd_coworker_`e'_`ym' 
+- Here we have 234 obs - 
+	- d_vars_`e'_`ym'
+- Here we have 234 obs - 
+	- turnover_`e'_`ym'
+- Here we have 234 obs - 
+	- spvteam_`e'_`ym'
+- Here we have 234 obs - 
+	- d_spvteam_`e'_`ym'
+- Here we have 234 obs - 
+	- d_growth_`e'
+- Here we have 28,193 obs - THIS IS WRONG
+	- size_hire_`e'
+- Here we have 28,193 obs - THIS IS WRONG
+
+9. Bind dataset from (8) by dir, emp, spv
+Input: poach_ind_`e'_`ym' - event level, 28,193 obs. -- THIS IS WRONG - should be 234; ym = 612/683
+Output: poach_ind_`e' - should be 18,007
+
+10. Include origin and dest. firm AKM FE
+Input: poach_ind_`e' and AKM_2003_2008_Firm and d_growth_`e' and size_hire_`e' -- here I need to check because should be poach_ind_spv: 18,007 obs and d_growth_spv and size_hire_spv have 28,193. After the merge, should be 18,007 obs because we are only considering ym 612/683
+Output: poach_ind_`e'
+
+
+
+- COLOQUEI PARA RODAR AT� O APPEND (9)
+- DEPOIS CHECAR SE poach_ind_spv_620 - 234 obs. e poach_ind_`e' - 18,007 obs.
+- COLOCAR PARA RODAR O 10
+- CHECAR QUANTAS OBS. TEM DEPOIS DO 10 (DEVERIA SER 18,007)
+
+
+
+- , keep(master match) nogen em todos os merge
+
+
+
+
+Reference for number of obs:
+e: spv
+ym: 620
+
+1. Information about raided workers
+Input: cowork_panel_m_`e'_`ym' - worker level panel 6,282,550 obs; ym: 528/683
+Output: rd_coworker_`e'_`ym' - event level, 117 obs; ym: 528/683
+* Number of raided coworkers
+* Wage of raided coworkers in destination firm
+* Wage of raided coworkers in origin firm
+* Quality of raided coworkers
+
+2. Destination firm: firm size and wage bill
+Input: evt_m_`e' - event level panel 28,193 obs. - and rais_m`ym' - raw RAIS, contract level; ym: 528/683
+Output: d_vars_`e'_`ym' - event level, 234 obs.; ym: 528/683
+* evt_m_`e' is used simply to list events at t=0
+* Use rais_m`ym' to look for dest. firms in t=0
+* Destination firm size
+* Destination firm wage bill
+* Ln destination firm wage bill
+
+3. Information about team size
+Input: cowork_panel_m_`e'_`ym' - worker level panel 6,282,550 obs; ym: 528/683
+Output: spvteam_`e'_`ym' - event level, 234 obs.; ym: 528/683
+* Number of coworkers in same team (same occ group) as poached spv
+* Number of coworkers that are also spv in same team (same occ group) as poached spv
+
+4. Destination firm: growth rate
+Input: evt_panel_m_`e' - event level panel 28,193 obs.
+Output: d_growth_`e' - event level panel 28,193 obs. -- THIS IS DIFFERENT FROM WHAT WE HAD IN PREVIOUS -- I THINK THIS IS WRONF=G
+* Growth rate (between t = -12 and t = -1)
+
+5. Destination firm: new hires
+Input: evt_panel_m_`e' - event level panel 28,193 obs.
+Output: size_hire_`e' - event level panel 28,193 obs. -- I THINK THIS IS WRONG
+* Count number of new hires in t = -12 
+
+6. Information about team size in DESTINATION firm
+Input: dest_panel_m_`e'_`ym' - worker level panel 2,992,306 obs.; NOTE: ym: 612/683 - and evt_panel_m_spv - event level panel 28,193 obs.
+Output: d_spvteam_`e'_`ym' - event level, 64 obs. NOTE: ym: 612/683
+* Merge dest_panel_m_`e'_`ym' to evt_panel_m_spv to keep only people that became mgr
+* Number of coworkers in same team (same occ group) as poached spv in dest. firm
+* Number of coworkers that are also spv in same team (same occ group) as poached spv in dest. firm
+
+7. Turnover
+Input: dest_panel_m_`e'_`ym' - worker level panel 2,992,306 obs.; ym: 612/683
+Output: turnover_`e'_`ym' - event id, 234 obs.; ym: 612/683
+* Calculates turnover
+
+8. Create main dataset
+Input: cowork_panel_m_`e'_`ym' - worker level panel 6,282,550 obs; ym: 612/683
+Output: poach_ind_`e'_`ym' - event level, 28,193 obs. -- this is wrong -- should be 234 for 620; ym: 612/683
+* Calculates size of origin firm
+* Includes information on quartile of worker FE
+* Number of workers above 75th perc at origin firm
+* Ratio of workers above 75th perc at origin firm
+* Number of mgrs at origin firm
+* Calculate # emp / # mgr
+* Origin firm avg AKM FE
+* Number of poached individuals
+* Wage of poached individual in destination firm
+* Wage of poached individual in origin firm (t=-12)
+* Wage of poached individual in origin firm (t=-1)
+* Quality of poached individual
+* Experience of the poached individual
+* Age of poached individual
+* Years of education of poached individual
+- Here we have 234 obs - 
+* Merge to auxiliary dataset
+	- rd_coworker_`e'_`ym' 
+- Here we have 234 obs - 
+	- d_vars_`e'_`ym'
+- Here we have 234 obs - 
+	- turnover_`e'_`ym'
+- Here we have 234 obs - 
+	- spvteam_`e'_`ym'
+- Here we have 234 obs - 
+	- d_spvteam_`e'_`ym'
+- Here we have 234 obs - 
+	- d_growth_`e'
+- Here we have 28,193 obs - THIS IS WRONG
+	- size_hire_`e'
+- Here we have 28,193 obs - THIS IS WRONG
+
+9. Bind dataset from (8) by dir, emp, spv
+Input: poach_ind_`e'_`ym' - event level, 28,193 obs. -- THIS IS WRONG - should be 234; ym = 612/683
+Output: poach_ind_`e' - should be 18,007
+
+10. Include origin and dest. firm AKM FE
+Input: poach_ind_`e' and AKM_2003_2008_Firm and d_growth_`e' and size_hire_`e' -- here I need to check because should be poach_ind_spv: 18,007 obs and d_growth_spv and size_hire_spv have 28,193. After the merge, should be 18,007 obs because we are only considering ym 612/683
+Output: poach_ind_`e'
+
+
+
+- COLOQUEI PARA RODAR AT� O APPEND (9)
+- DEPOIS CHECAR SE poach_ind_spv_620 - 234 obs. e poach_ind_`e' - 18,007 obs.
+- COLOCAR PARA RODAR O 10
+- CHECAR QUANTAS OBS. TEM DEPOIS DO 10 (DEVERIA SER 18,007)
+
+
+
+- , keep(master match) nogen em todos os merge
+
+
+
+
+/home/ecco_rais/data/interwrk/daniela_group/ilm_new/simplified_readme

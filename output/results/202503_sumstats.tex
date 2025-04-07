@@ -1,0 +1,26 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{ccc}}
+\toprule
+                    &\multicolumn{2}{c}{\textbf{10th pct}}&\multicolumn{2}{c}{\textbf{Median}}&\multicolumn{2}{c}{\textbf{90th pct}}&\multicolumn{3}{c}{\textbf{Mean}}        \\\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-10}
+                    &      Origin& Destination&      Origin& Destination&      Origin& Destination&      Origin& Destination&        Diff   \\
+\midrule
+\textbf{Firm variables}&            &            &            &            &            &            &            &            &               \\
+Productivity proxy (firm AKM FE)&       -0.23&       -0.23&        0.06&        0.09&        0.38&        0.42&        0.07&        0.10&       -0.02***\\
+Avg. worker ability (worker AKM FE)&       -0.60&       -0.58&       -0.29&       -0.28&        0.29&        0.36&       -0.21&       -0.18&       -0.02***\\
+Firm size (\# workers)&          72&          63&         318&         226&        2333&        1286&         974&         565&         409***\\
+Raided workers wage (2008 BRL)&      626.01&      659.97&     1177.72&     1245.85&     3451.33&     3814.33&     1778.28&     1902.66&     -124.39** \\
+Salary              &     1081.65&     1177.87&     2812.31&     3007.45&     7708.32&     7433.12&     3911.68&     3826.86&       84.82   \\
+Age                 &       27.00&            &       35.00&            &       49.00&            &       36.96&            &               \\
+Experience          &        7.00&            &       16.00&            &       33.00&            &       18.34&            &               \\
+Ability             &       -0.70&            &        0.07&            &        1.17&            &        0.16&            &               \\
+\\ \textbf{Industry}&            &            &            &            &            &            &            &            &               \\
+Manufacturing       &            &            &            &            &            &            &        0.28&        0.01&        0.27***\\
+Services            &            &            &            &            &            &            &        0.30&        0.60&       -0.30***\\
+Retail              &            &            &            &            &            &            &        0.13&        0.02&        0.11***\\
+Other               &            &            &            &            &            &            &        0.29&        0.37&       -0.08***\\
+\midrule
+Poaching events     &            &            &            &            &            &            &            &            &               \\
+\bottomrule
+\end{tabular}
+}

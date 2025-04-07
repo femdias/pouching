@@ -1,0 +1,28 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{ccc}}
+\toprule
+                    &\multicolumn{2}{c}{\textbf{10th pct}}&\multicolumn{2}{c}{\textbf{Median}}&\multicolumn{2}{c}{\textbf{90th pct}}&\multicolumn{3}{c}{\textbf{Mean}}        \\\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-10}
+                    &      Origin& Destination&      Origin& Destination&      Origin& Destination&      Origin& Destination&        Diff   \\
+\midrule
+\textbf{Firm variables}&            &            &            &            &            &            &            &            &               \\
+Productivity proxy (firm AKM FE)&       -0.23&       -0.23&        0.06&        0.09&        0.38&        0.42&        0.07&        0.09&        0.02***\\
+Avg. worker ability (worker AKM FE)&       -0.60&       -0.59&       -0.29&       -0.26&        0.28&        0.47&       -0.21&       -0.15&        0.06***\\
+Firm size (\# workers)&          73&          63&         328&         230&        2399&        1353&         971&         565&        -407***\\
+Raided workers wage (2008 BRL)&      624.90&      655.48&     1170.45&     1238.68&     3435.47&     3812.70&     1739.99&     1865.84&      125.85***\\
+\\ \textbf{Manager variables}&            &            &            &            &            &            &            &            &               \\
+Salary              &     1062.28&     1156.70&     2767.18&     2927.34&     7698.79&     7382.10&     3839.71&     3747.46&      -92.25*  \\
+Residualized salary &     1050.77&     1167.94&     2883.49&     2995.22&     7572.12&     7258.68&     3878.74&     3772.81&     -105.93*  \\
+Age                 &       28.00&            &       36.50&            &       50.00&            &       38.02&            &               \\
+Experience          &        7.00&            &       17.00&            &       34.00&            &       19.00&            &               \\
+Ability             &       -0.70&            &        0.06&            &        1.15&            &        0.15&            &               \\
+\\ \textbf{Industry}&            &            &            &            &            &            &            &            &               \\
+Manufacturing       &            &            &            &            &            &            &        0.31&        0.29&       -0.02*  \\
+Services            &            &            &            &            &            &            &        0.29&        0.31&        0.02** \\
+Retail              &            &            &            &            &            &            &        0.13&        0.12&       -0.01   \\
+Other               &            &            &            &            &            &            &        0.27&        0.27&        0.00   \\
+\midrule
+Poaching events     &        5722&            &            &            &            &            &            &            &               \\
+\bottomrule
+\end{tabular}
+}

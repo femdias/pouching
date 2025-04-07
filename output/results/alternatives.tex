@@ -1,0 +1,30 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{9}{c}}
+                &\multicolumn{3}{c}{Mgr to Mgr}        &\multicolumn{3}{c}{Mgr to Non-Mgr}    &\multicolumn{3}{c}{Non-Mgr to Mgr}    \\\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   &\multicolumn{1}{c}{(7)}   &\multicolumn{1}{c}{(8)}   &\multicolumn{1}{c}{(9)}   \\
+\midrule        &            &            &            &            &            &            &            &            &            \\
+Destination firm size (ln)&    0.013** &    0.015** &    0.027***&    0.014** &    0.012** &    0.023***&    0.001   &    0.005   &    0.011   \\
+                &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.006)   &  (0.009)   &  (0.009)   &  (0.009)   \\
+Destination firm empl. growth rate&    0.023***&    0.027***&    0.031***&    0.012   &    0.019** &    0.017** &    0.003   &    0.011   &    0.009   \\
+                &  (0.007)   &  (0.007)   &  (0.007)   &  (0.009)   &  (0.009)   &  (0.009)   &  (0.009)   &  (0.009)   &  (0.009)   \\
+\\ Orig. firm size (ln)&            &    0.017** &            &            &    0.014   &            &            &    0.009   &            \\
+                &            &  (0.007)   &            &            &  (0.009)   &            &            &  (0.014)   &            \\
+Orig. firm avg worker quality&            &    0.064   &            &            &    0.070   &            &            &   -0.036   &            \\
+                &            &  (0.099)   &            &            &  (0.129)   &            &            &  (0.202)   &            \\
+Orig. firm size (ln) $\times$ orig. firm avg worker quality&            &    0.041***&            &            &    0.030   &            &            &    0.042   &            \\
+                &            &  (0.016)   &            &            &  (0.021)   &            &            &  (0.033)   &            \\
+\\ Quality of raided workers&            &            &    0.098***&            &            &    0.046** &            &            &    0.018   \\
+                &            &            &  (0.019)   &            &            &  (0.020)   &            &            &  (0.028)   \\
+\# raided workers (ln)&            &            &   -0.033***&            &            &    0.000   &            &            &   -0.024** \\
+                &            &            &  (0.006)   &            &            &  (0.007)   &            &            &  (0.012)   \\
+Quality of raided workers $\times$ \# raided workers (ln)&            &            &    0.018*  &            &            &    0.052***&            &            &    0.019   \\
+                &            &            &  (0.011)   &            &            &  (0.011)   &            &            &  (0.021)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     2864   &     2864   &     2864   &     2603   &     2603   &     2603   &     1260   &     1260   &     1260   \\
+R-Squared       &    0.715   &    0.730   &    0.728   &    0.624   &    0.635   &    0.634   &    0.671   &    0.681   &    0.677   \\
+Prediction      &        4   &        5   &        6   &        4   &        5   &        6   &        4   &        5   &        6   \\
+\end{tabular}
+}

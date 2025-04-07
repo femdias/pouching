@@ -1,0 +1,22 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{c}}
+                &\multicolumn{5}{c}{Outcome: Manager ln(salary) at destination}  \\\cmidrule(lr){2-6}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+\midrule        &            &            &            &            &            \\
+Orig. firm size (ln)&    0.017***&    0.031***&    0.029** &    0.028** &    0.022** \\
+                &  (0.006)   &  (0.011)   &  (0.011)   &  (0.011)   &  (0.011)   \\
+Manager tenure overlap&    0.179***&    0.483** &    0.462** &    0.454** &    0.432** \\
+                &  (0.043)   &  (0.196)   &  (0.196)   &  (0.192)   &  (0.193)   \\
+Orig. firm size (ln) $\times$ Manager tenure overlap&            &   -0.050   &   -0.049   &   -0.051*  &   -0.047   \\
+                &            &  (0.031)   &  (0.031)   &  (0.030)   &  (0.030)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm}  \\ Destination firm size (ln) &            &            &            &            &   \cmark   \\
+Destination firm growth &            &            &            &            &   \cmark   \\
+ \\ Events      &      All   &      All   &      All   &      All   &            \\
+Obs             &     2144   &     2144   &     2144   &     2144   &     2144   \\
+R-Squared       &    0.673   &    0.674   &    0.675   &    0.698   &    0.700   \\
+\end{tabular}
+}

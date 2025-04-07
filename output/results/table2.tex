@@ -1,0 +1,21 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{7}{c}}
+                &\multicolumn{5}{c}{Mgr to mgr}                                  &\multicolumn{1}{c}{Mgr to non-mgr}&\multicolumn{1}{c}{Non-mgr to mgr}\\\cmidrule(lr){2-6}\cmidrule(lr){7-7}\cmidrule(lr){8-8}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   &\multicolumn{1}{c}{(7)}   \\
+\midrule \textit{Origin firm characteristics}&            &            &            &            &            &            &            \\
+Firm size (ln)  &    0.017***&    0.027***&    0.026***&    0.024***&    0.015***&    0.003   &    0.006   \\
+                &  (0.004)   &  (0.005)   &  (0.005)   &  (0.004)   &  (0.004)   &  (0.005)   &  (0.007)   \\
+Firm avg quality&    0.332***&    0.105*  &    0.099   &    0.016   &   -0.032   &    0.228***&    0.006   \\
+                &  (0.019)   &  (0.061)   &  (0.061)   &  (0.059)   &  (0.056)   &  (0.066)   &  (0.093)   \\
+Firm size (ln) $\times$ Firm avg quality&            &    0.039***&    0.040***&    0.045***&    0.038***&   -0.004   &    0.024   \\
+                &            &  (0.010)   &  (0.010)   &  (0.010)   &  (0.009)   &  (0.012)   &  (0.016)   \\
+\textbf{Manager controls} \\ Origin wage &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Experience      &            &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm}  \\ Size &            &            &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Wage premium    &            &            &            &            &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     5722   &     5722   &     5722   &     5722   &     5722   &     6813   &     3143   \\
+R-Squared       &    0.685   &    0.685   &    0.690   &    0.710   &    0.735   &    0.633   &    0.672   \\
+\end{tabular}
+}

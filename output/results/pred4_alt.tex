@@ -1,0 +1,19 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{4}{c}}
+                &\multicolumn{4}{c}{Outcome: Manager ln(salary) at destination}\\\cmidrule(lr){2-5}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   \\
+\midrule        &            &            &            &            \\
+Dest. firm size (ln)&    0.067***&    0.032***&    0.031***&    0.027***\\
+                &  (0.011)   &  (0.006)   &  (0.006)   &  (0.006)   \\
+Dest. firm empl. growth rate&    0.034***&    0.024***&    0.025***&    0.029***\\
+                &  (0.013)   &  (0.007)   &  (0.007)   &  (0.007)   \\
+\textbf{Manager controls} \\ Origin wage &            &   \cmark   &   \cmark   &   \cmark   \\
+Experience      &            &            &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   \\
+\textbf{Event controls} \\ # raided workers (ln) &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+# poached managers (ln) &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     2864   &     2864   &     2864   &     2864   \\
+R-Squared       &    0.100   &    0.703   &    0.704   &    0.722   \\
+\end{tabular}
+}
