@@ -1,0 +1,24 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{c}}
+                &\multicolumn{5}{c}{Outcome: Manager ln(salary) at destination}  \\\cmidrule(lr){2-6}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+\midrule        &            &            &            &            &            \\
+Orig. firm size (ln)&    0.025***&   -0.039   &   -0.040   &   -0.044   &   -0.051*  \\
+                &  (0.006)   &  (0.029)   &  (0.029)   &  (0.029)   &  (0.029)   \\
+Manager tenure overlap (ln)&   -0.001   &   -0.131** &   -0.132** &   -0.151** &   -0.145** \\
+                &  (0.013)   &  (0.060)   &  (0.060)   &  (0.060)   &  (0.060)   \\
+Orig. firm size (ln) $\times$ Manager tenure overlap (ln)&            &    0.021** &    0.021** &    0.021** &    0.022** \\
+                &            &  (0.010)   &  (0.010)   &  (0.010)   &  (0.010)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm}  \\ Destination firm size (ln) &            &            &            &            &   \cmark   \\
+Destination firm growth &            &            &            &            &   \cmark   \\
+\textbf{Event controls} \\ # raided workers (ln) &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+# poached managers (ln) &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Events      &      All   &      All   &      All   &      All   &            \\
+Obs             &     2168   &     2168   &     2168   &     2168   &     2168   \\
+R-Squared       &    0.666   &    0.667   &    0.668   &    0.688   &    0.691   \\
+\end{tabular}
+}

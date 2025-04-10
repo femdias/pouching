@@ -249,35 +249,36 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
  
  	// log of number of managers pouched			
 	gen pc_n_ln = ln(pc_n)
+	la var pc_n_ln "Number of pouched managers"
 	
 	// baseline events (spv-spv, mostly)
 	
-	eststo c0_spv_6: reg pc_wage_d rd_coworker_fe rd_coworker_n_ln pc_n_ln ///
+	eststo c0_spv_6_alt: reg pc_wage_d rd_coworker_fe pc_n_ln ///
 			///
 			if $raidcond & $spvcond, rob
 	
-	eststo c3_spv_6: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_fe    ///
-			pc_wage_o_l1 rd_coworker_n_ln pc_n_ln ///
+	eststo c3_spv_6_alt: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_fe    ///
+			pc_wage_o_l1 pc_n_ln ///
 			if $raidcond & $spvcond, rob
 			
-	eststo c4_spv_6: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_fe     ///
-			pc_wage_o_l1 pc_exp_ln pc_exp_m rd_coworker_n_ln pc_n_ln ///
+	eststo c4_spv_6_alt: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_fe     ///
+			pc_wage_o_l1 pc_exp_ln pc_exp_m pc_n_ln ///
 			if $raidcond & $spvcond, rob
 			
-	eststo c5_spv_6: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_fe     ///
-			pc_wage_o_l1  $mgr rd_coworker_n_ln pc_n_ln ///
+	eststo c5_spv_6_alt: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_fe     ///
+			pc_wage_o_l1  $mgr pc_n_ln ///
 			if $raidcond & $spvcond, rob
 			
-	eststo c6_spv_6: reg pc_wage_d d_size_w_ln d_growth_w  c.rd_coworker_fe##c.lnraid ///
-			pc_wage_o_l1  $mgr rd_coworker_n_ln pc_n_ln  ///
+	eststo c6_spv_6_alt: reg pc_wage_d d_size_w_ln d_growth_w  c.rd_coworker_fe##c.lnraid ///
+			pc_wage_o_l1  $mgr pc_n_ln  ///
 			if $raidcond & $spvcond, rob
 			
 			estadd local pred "6"
 			
 	// spv-emp		
 			
-	eststo c6_spvs_6: reg pc_wage_d d_size_w_ln d_growth_w    c.rd_coworker_fe##c.lnraid ///
-			pc_wage_o_l1 $mgr rd_coworker_n_ln pc_n_ln ///
+	eststo c6_spvs_6_alt: reg pc_wage_d d_size_w_ln d_growth_w    c.rd_coworker_fe##c.lnraid ///
+			pc_wage_o_l1 $mgr pc_n_ln ///
 			if $raidcond & (spv==2 & waged_svpemp<10 & waged_svpemp>=1), rob
 			
 			estadd local pred "6"
@@ -285,29 +286,31 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 	// emp-spv
 	
 	
-	eststo c6_epvs_6: reg pc_wage_d d_size_w_ln d_growth_w    c.rd_coworker_fe##c.lnraid ///
-			pc_wage_o_l1 $mgr rd_coworker_n_ln pc_n_ln ///
+	eststo c6_epvs_6_alt: reg pc_wage_d d_size_w_ln d_growth_w    c.rd_coworker_fe##c.lnraid ///
+			pc_wage_o_l1 $mgr pc_n_ln ///
 			if $raidcond & (spv==3 & waged_empspv<10 & waged_empspv>=1) , rob
 			
 			estadd local pred "6"
 			
 	// display table
 	
-	esttab  c0_spv_6 c3_spv_6 c4_spv_6 c5_spv_6 c6_spv_6,  /// 
+	esttab  c0_spv_6_alt c3_spv_6_alt c4_spv_6_alt c5_spv_6_alt c6_spv_6_alt,  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label ///   
 		mlabel("spv-spv" "spv-spv"  "spv-spv" "spv-spv"  "spv-spv") ///
 		keep(lnraid rd_coworker_fe  c.rd_coworker_fe#c.lnraid ) ///
 		cells(b(star fmt(3)) se(par fmt(3))) ///  only display standard errors 
 		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
 		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
-		"Manager experience = pc_exp_ln" "Manager quality = pc_fe" ///
-		"\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln"  ///
-		, labels("\cmark" ""))
+		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
+		"Manager experience = pc_exp_ln" "Manager quality = pc_fe"  /// 
+		"\\ \textbf{Destination firm} \\ Dest. firm size = d_size_w_ln" ///
+		"Dest. firm growth = d_growth_w" ///
+		"\textbf{Event controls} \\ \# poached managers (ln) = pc_n_ln" ///
+		, labels("\cmark" ""))	
 	 
 	// save table
 
-	esttab c0_spv_6 c3_spv_6 c4_spv_6 c5_spv_6 c6_spv_6 using "${results}/pred6.tex", booktabs  /// 
+	esttab c0_spv_6_alt c3_spv_6_alt c4_spv_6_alt c5_spv_6_alt c6_spv_6_alt using "${results}/pred6_alt.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		mgroups("Outcome: Manager ln(salary) at destination",  ///
 		pattern(1 0 0 0 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
@@ -320,7 +323,7 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 		"Manager experience = pc_exp_ln" "Manager quality = pc_fe"  /// 
 		"\\ \textbf{Destination firm} \\ Dest. firm size = d_size_w_ln" ///
 		"Dest. firm growth = d_growth_w" ///
-		"\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln" ///
+		"\textbf{Event controls} \\ \# poached managers (ln) = pc_n_ln" ///
 		, labels("\cmark" ""))	
 
 

@@ -223,8 +223,16 @@
 // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
 
 	// this panel will be constructed separately for each cohort
-	*foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {
-	forvalues ym=620/620 {
+	*foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { // COMPLETE LIST
+	*forvalues ym=620/620 {								 // O QUE JÁ RODOU	
+	*foreach ym of numlist 601/611 { 						 // LOOP 1
+	*foreach ym of numlist 613/619 621/623 { 					 // LOOP 2
+	*foreach ym of numlist 625/635 { 						 // LOOP 3
+	*foreach ym of numlist 637/647 { 						 // LOOP 4
+	*foreach ym of numlist 649/659 { 						 // LOOP 5
+	*foreach ym of numlist 661/671 { 						 // LOOP 6
+	*foreach ym of numlist 673/683 { 						 // LOOP 7
+	
 	
 	use "${temp}/202503_o_cw_`ym'_complete", clear
 	

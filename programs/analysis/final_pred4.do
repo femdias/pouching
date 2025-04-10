@@ -29,6 +29,8 @@ set seed 6543
 	
 	// generating identifier
 	gen spv = 1
+// Opening Log file
+log using "log_file.log", replace text
 	
 	save "${temp}/pred4_spv_spv", replace
 		
@@ -144,7 +146,7 @@ set seed 6543
 	la var rd_coworker_fe "Quality of raided workers" 
 	
 	// saving
-	save "${temp}/pred4_test", replace
+	save "${temp}/pred4", replace
 
 *--------------------------*
 * ANALYSIS
@@ -157,7 +159,7 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 
 // regressions	
 
-	use "${temp}/pred4_test", clear // baseline events: "spv --> spv" 
+	use "${temp}/pred4", clear // baseline events: "spv --> spv" 
  
 	// baseline events (spv-spv, mostly)
 	
@@ -242,42 +244,43 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 
 // regressions	
 
-	use "${temp}/pred4_test", clear // baseline events: "spv --> spv" 
+	use "${temp}/pred4", clear // baseline events: "spv --> spv" 
  
 	// log of number of managers pouched			
 	gen pc_n_ln = ln(pc_n)
+	la var pc_n_ln "Number of pouched managers"
 
 	// baseline events (spv-spv, mostly)
 	
-	eststo c0_spv_4: reg pc_wage_d d_size_w_ln d_growth_w rd_coworker_n_ln pc_n_ln     ///
+	eststo c0_spv_4_alt: reg pc_wage_d d_size_w_ln d_growth_w lnraid pc_n_ln     ///
 			if $raidcond & $spvcond, rob
 	
-	eststo c3_spv_4: reg pc_wage_d d_size_w_ln d_growth_w        ///
-			pc_wage_o_l1  rd_coworker_n_ln pc_n_ln ///
+	eststo c3_spv_4_alt: reg pc_wage_d d_size_w_ln d_growth_w        ///
+			pc_wage_o_l1 lnraid pc_n_ln ///
 			if $raidcond & $spvcond, rob
 			
-	eststo c4_spv_4: reg pc_wage_d d_size_w_ln d_growth_w     ///
-			pc_wage_o_l1 pc_exp_ln pc_exp_m  rd_coworker_n_ln pc_n_ln ///
+	eststo c4_spv_4_alt: reg pc_wage_d d_size_w_ln d_growth_w     ///
+			pc_wage_o_l1 pc_exp_ln pc_exp_m lnraid pc_n_ln ///
 			if $raidcond & $spvcond, rob
 			
-	eststo c5_spv_4: reg pc_wage_d d_size_w_ln d_growth_w     ///
-			pc_wage_o_l1  $mgr rd_coworker_n_ln pc_n_ln ///
+	eststo c5_spv_4_alt: reg pc_wage_d d_size_w_ln d_growth_w     ///
+			pc_wage_o_l1 $mgr lnraid pc_n_ln ///
 			if $raidcond & $spvcond, rob
 			
 		estadd local pred "4"	
 			
 	// spv-emp		
 			
-	eststo c5_spvs_4: reg pc_wage_d d_size_w_ln d_growth_w     ///
-			pc_wage_o_l1 $mgr rd_coworker_n_ln pc_n_ln ///
+	eststo c5_spvs_4_alt: reg pc_wage_d d_size_w_ln d_growth_w     ///
+			pc_wage_o_l1 $mgr lnraid pc_n_ln ///
 			if $raidcond  & (spv==2 & waged_svpemp<10 & waged_svpemp>=1), rob
 		
 		estadd local pred "4"
 				
 	// emp-spv
 	
-	eststo c5_epvs_4: reg pc_wage_d d_size_w_ln d_growth_w    ///
-			pc_wage_o_l1 $mgr rd_coworker_n_ln pc_n_ln ///
+	eststo c5_epvs_4_alt: reg pc_wage_d d_size_w_ln d_growth_w    ///
+			pc_wage_o_l1 $mgr lnraid pc_n_ln ///
 			if $raidcond  & (spv==3 & waged_empspv<10 & waged_empspv>=1) , rob
 			
 		estadd local pred "4"
@@ -286,7 +289,7 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 	
 	// display table
 	
-	esttab  c0_spv_4 c3_spv_4 c4_spv_4 c5_spv_4,  /// 
+	esttab  c0_spv_4_alt c3_spv_4_alt c4_spv_4_alt c5_spv_4_alt,  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label ///   
 		mlabel("spv-spv" "spv-spv"  "spv-spv" "spv-spv") ///
 		keep(d_size_w_ln d_growth_w) ///
@@ -294,12 +297,12 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
 		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
 		indicate("\textbf{Manager controls} \\ Origin wage = pc_wage_o_l1" ///
-		"Experience = pc_exp_ln" "Manager quality = pc_fe"  "\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln" ///
+		"Experience = pc_exp_ln" "Manager quality = pc_fe"  "\textbf{Event controls} \\ \# raided workers (ln) = lnraid" "\# poached managers (ln) = pc_n_ln" ///
 		, labels("\cmark" ""))
 	
 	// save table
 
-	esttab c0_spv_4 c3_spv_4 c4_spv_4 c5_spv_4 using "${results}/pred4_alt.tex", booktabs  /// 
+	esttab c0_spv_4_alt c3_spv_4_alt c4_spv_4_alt c5_spv_4_alt using "${results}/pred4_alt.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		refcat(d_size_w_ln "\midrule", nolabel) ///
 		mgroups("Outcome: Manager ln(salary) at destination",  /// 
@@ -309,7 +312,7 @@ global raidcond "rd_coworker_n>=1 & pc_ym >= ym(2010,1) & rd_coworker_fe_m==0  "
 		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
 		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
 		indicate("\textbf{Manager controls} \\ Origin wage = pc_wage_o_l1" ///
-		"Experience = pc_exp_ln" "Manager quality = pc_fe"  "\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln" ///
+		"Experience = pc_exp_ln" "Manager quality = pc_fe"  "\textbf{Event controls} \\ \# raided workers (ln) = lnraid" "\# poached managers (ln) = pc_n_ln" ///
 		, labels("\cmark" ""))	
 		
 		

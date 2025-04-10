@@ -90,7 +90,7 @@
 	*do "${prepare}/202503_cowork_panel_m_LOOP4"
 	*do "${prepare}/202503_cowork_panel_m_LOOP5"
 	*do "${prepare}/202503_cowork_panel_m_LOOP6"
-	*do "${prepare}/202503_cowork_panel_m_LOOP7"
+	do "${prepare}/202503_cowork_panel_m_LOOP7"
 	
 	// constructing event-level panel with poaching plants (destination plants)
 	*do "${prepare}/202503_evt_panel_m"

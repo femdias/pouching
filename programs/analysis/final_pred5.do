@@ -109,7 +109,6 @@
 	g d_size_w_ln = ln(d_size_w)
 	winsor d_growth, gen(d_growth_w) p(0.05) 
 	
-	
 	// fe_firm_d
 	replace fe_firm_d = -99 if fe_firm_d==.
 	g fe_firm_d_m = (fe_firm_d==-99)
@@ -234,7 +233,7 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 	
 	// baseline events (spv-spv, mostly)
 	
-	 eststo c0_spv_5: reg pc_wage_d o_size_w_ln o_avg_fe_worker    ///
+	eststo c0_spv_5: reg pc_wage_d o_size_w_ln o_avg_fe_worker    ///
 			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 			
@@ -501,7 +500,7 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 	// tenue overlap, sum, lm
 	
 	gen tenure_overlap_sum_ln = ln(tenure_overlap_sum)
-	la var tenure_overlap_sum_ln "Manafer tenure overlap (ln)"
+	la var tenure_overlap_sum_ln "Manager tenure overlap (ln)"
 	
 	// tenure overlap, raided
 	
@@ -542,44 +541,47 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 	
 	// baseline events (spv-spv, mostly)
 	
-	 eststo c0_spv_5: reg pc_wage_d o_size_w_ln o_avg_fe_worker    ///
+	 eststo c0_spv_5_alt: reg pc_wage_d o_size_w_ln o_avg_fe_worker lnraid pc_n_ln ///
 			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 	
-	qui eststo c1_spv_5: reg pc_wage_d o_size_w_ln o_avg_fe_worker    ///
+	qui eststo c1_spv_5_alt: reg pc_wage_d o_size_w_ln o_avg_fe_worker lnraid pc_n_ln    ///
 			pc_wage_o_l1 if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 		
-	qui eststo c2_spv_5: reg pc_wage_d  c.o_size_w_ln##c.o_avg_fe_worker     ///
+	qui eststo c2_spv_5_alt: reg pc_wage_d  c.o_size_w_ln##c.o_avg_fe_worker lnraid pc_n_ln     ///
 			pc_wage_o_l1 if  pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 				  
-	qui eststo c3_spv_5: reg pc_wage_d  c.o_size_w_ln##c.o_avg_fe_worker   /// 
-			pc_wage_o_l1 pc_exp_ln pc_exp_m if pc_ym >= ym(2010,1) & $spvcond ///
+	qui eststo c3_spv_5_alt: reg pc_wage_d  c.o_size_w_ln##c.o_avg_fe_worker lnraid pc_n_ln   /// 
+			pc_wage_o_l1 pc_exp_ln pc_exp_m pc_n_ln ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 				
 			estadd local events "All"	
 				
-	qui eststo c4_spv_5: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker   /// 
-			pc_wage_o_l1 $mgr if pc_ym >= ym(2010,1) & $spvcond ///
+	qui eststo c4_spv_5_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker lnraid pc_n_ln   /// 
+			pc_wage_o_l1 $mgr pc_n_ln ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 				
-	eststo c5_spv_5: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
+	eststo c5_spv_5_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker  lnraid pc_n_ln   /// 
+			pc_wage_o_l1 $mgr $firm_d pc_n_ln ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0,  rob
 			
 			estadd local pred "5"
 			estadd local events "All"
 			
-	eststo c6_spv_5: reg pc_wage_d  c.o_size_w_ln##c.tenure_overlap_ln   /// 
+	eststo c6_spv_5_alt: reg pc_wage_d  c.o_size_w_ln##c.tenure_overlap_ln lnraid pc_n_ln   /// 
 			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0,  rob
 			
@@ -589,29 +591,33 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 			
 			xtile tenure_xtile_spvspv = tenure_overlap  if e(sample) == 1, nq(4)
 			
-	eststo c5_spv_5_belowmed: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
+	eststo c5_spv_5_belowmed_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d lnraid pc_n_ln  ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0 ///
 			& (tenure_xtile_spvspv == 1 | tenure_xtile_spvspv == 2),  rob
 			
 			estadd local events "Low Overlap"
 			
-	eststo c5_spv_5_abovemed: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
+	eststo c5_spv_5_abovemed_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d lnraid pc_n_ln  ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0 ///
 			& (tenure_xtile_spvspv == 3 | tenure_xtile_spvspv == 4),  rob
 			
 			estadd local events "High Overlap"
 			
-	eststo c5_spv_5_q1: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
+	eststo c5_spv_5_q1_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d lnraid pc_n_ln  ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0 ///
 			& (tenure_xtile_spvspv == 1),  rob
 			
 			estadd local events "Low Overlap"
 			
-	eststo c5_spv_5_q4: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
+	eststo c5_spv_5_q4_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d lnraid pc_n_ln  ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0 ///
 			& (tenure_xtile_spvspv == 4),  rob
 			
@@ -621,34 +627,35 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 	
 	foreach var in overlap overlap_ln overlap_sum overlap_sum_ln overlap_raided overlap_raided_ln overlap_raided_sum overlap_rd_sum_ln overlap_full overlap_full_sum overlap_fll_s_ln overlap_1y {
 	
-	qui eststo c1_spv_5_`var': reg pc_wage_d o_size_w_ln tenure_`var'  ///
-			pc_wage_o_l1 if pc_ym >= ym(2010,1) & $spvcond ///
+	qui eststo c1spv5_`var'_a: reg pc_wage_d o_size_w_ln tenure_`var'  ///
+			pc_wage_o_l1 lnraid pc_n_ln ///
+			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 		
-	qui eststo c2_spv_5_`var': reg pc_wage_d  c.o_size_w_ln##c.tenure_`var'     ///
-			pc_wage_o_l1 rd_coworker_n_ln pc_n_ln  ///
+	qui eststo c2spv5_`var'_a: reg pc_wage_d  c.o_size_w_ln##c.tenure_`var'     ///
+			pc_wage_o_l1 lnraid pc_n_ln  ///
 			if  pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 				  
-	qui eststo c3_spv_5_`var': reg pc_wage_d  c.o_size_w_ln##c.tenure_`var'   /// 
-			pc_wage_o_l1 pc_exp_ln pc_exp_m rd_coworker_n_ln pc_n_ln  ///
+	qui eststo c3spv5_`var'_a: reg pc_wage_d  c.o_size_w_ln##c.tenure_`var'   /// 
+			pc_wage_o_l1 pc_exp_ln pc_exp_m lnraid pc_n_ln  ///
 			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0, rob
 				
 			estadd local events "All"	
 				
-	qui eststo c4_spv_5_`var': reg pc_wage_d   c.o_size_w_ln##c.tenure_`var'   /// 
-			pc_wage_o_l1 $mgr rd_coworker_n_ln pc_n_ln if pc_ym >= ym(2010,1) & $spvcond ///
+	qui eststo c4spv5_`var'_a: reg pc_wage_d   c.o_size_w_ln##c.tenure_`var'   /// 
+			pc_wage_o_l1 $mgr lnraid pc_n_ln if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0, rob
 			
 			estadd local events "All"
 				
-	qui eststo c5_spv_5_`var': reg pc_wage_d   c.o_size_w_ln##c.tenure_`var'    /// 
-			pc_wage_o_l1 $mgr $firm_d  rd_coworker_n_ln pc_n_ln ///
+	qui eststo c5spv5_`var'_a: reg pc_wage_d   c.o_size_w_ln##c.tenure_`var'    /// 
+			pc_wage_o_l1 $mgr $firm_d  lnraid pc_n_ln ///
 			if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0,  rob
 			
@@ -659,8 +666,8 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 				
 	// spv-emp		
 	
-	qui eststo c5_spvs_5: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d rd_coworker_n_ln pc_n_ln ///
+	qui eststo c5_spvs_5_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d lnraid pc_n_ln ///
 			if pc_ym >= ym(2010,1) & ( spv==2 & waged_svpemp<10 & waged_svpemp>=1) ///
 			& rd_coworker_n>=1 & rd_coworker_fe_m==0,  rob 
 			
@@ -668,36 +675,40 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 	
 	// emp-spv
 	
-	qui eststo c5_espv_5: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
-			pc_wage_o_l1 $mgr $firm_d rd_coworker_n_ln pc_n_ln  if pc_ym >= ym(2010,1) & (spv==3 & waged_empspv<10 & waged_empspv>=1) ///
+	qui eststo c5_espv_5_alt: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d lnraid pc_n_ln ///
+			if pc_ym >= ym(2010,1) & (spv==3 & waged_empspv<10 & waged_empspv>=1) ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0,  rob 
 			
 			estadd local pred "5"
 	
 	// display table
 	
-	/*
-	    
-	esttab c1_spv_5 c2_spv_5 c3_spv_5 c4_spv_5 c5_spv_5 c6_spv_5,  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label ///   
-		mlabel("spv-spv" "spv-spv" "spv-spv" "spv-spv" "spv-spv") ///
-		keep(o_size_w_ln o_avg_fe_worker  c.o_size_w_ln#c.o_avg_fe_worker tenure_overlap_ln c.o_size_w_ln#c.tenure_overlap_ln) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///  only display standard errors 
+	
+	   
+	esttab c1_spv_5_alt c2_spv_5_alt c3_spv_5_alt c4_spv_5_alt c5_spv_5_alt,  /// 
+		replace compress noconstant nomtitles nogap collabels(none) label /// 
+		refcat(o_size_w_ln "\midrule", nolabel) ///
+		mgroups("Outcome: Manager ln(salary) at destination",  ///
+		pattern(1 0 0 0 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
+		keep(o_size_w_ln o_avg_fe_worker c.o_size_w_ln#c.o_avg_fe_worker ) ///
+		cells(b(star fmt(3)) se(par fmt(3))) ///    
 		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
 		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
+		mlabel("spv-spv" "spv-spv" "spv-spv" "spv-spv" "spv-spv") ///
 		indicate("\textbf{Manager controls} \\ Origin wage = pc_wage_o_l1" ///
 		"Experience = pc_exp_ln" "Manager quality = pc_fe" ///
 		"\\ \textbf{Destination firm}  \\ Size = d_size_w_ln" "Growth = d_growth_w"  ///
 		, labels("\cmark" ""))
 	
-	*/
+	
 			
 		
 	// save table
 	
 	// original table
 	
-	esttab c1_spv_5 c2_spv_5 c3_spv_5 c4_spv_5 c5_spv_5 using "${results}/pred5_alt.tex", booktabs  /// 
+	esttab c1_spv_5_alt c2_spv_5_alt c3_spv_5_alt c4_spv_5_alt c5_spv_5_alt using "${results}/pred5_alt.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		refcat(o_size_w_ln "\midrule", nolabel) ///
 		mgroups("Outcome: Manager ln(salary) at destination",  ///
@@ -709,12 +720,12 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
 		"Manager experience = pc_exp_ln" "Manager quality = pc_fe" ///
 		"\\ \textbf{Destination firm}  \\ Destination firm size (ln) = d_size_w_ln" "Destination firm growth = d_growth_w"  ///
-		"\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln"  ///
+		"\textbf{Event controls} \\ # raided workers (ln) = lnraid" "# poached managers (ln) = pc_n_ln"  ///
 		, labels("\cmark" ""))
 		
 	// v1: with below and above median tenure overlap columns
 	
-	esttab c1_spv_5 c2_spv_5 c3_spv_5 c4_spv_5 c5_spv_5 c5_spv_5_belowmed  c5_spv_5_abovemed using "${results}/pred5_v1_alt.tex", booktabs  /// 
+	esttab c1_spv_5_alt c2_spv_5_alt c3_spv_5_alt c4_spv_5_alt c5_spv_5_alt c5_spv_5_belowmed_alt c5_spv_5_abovemed_alt using "${results}/pred5_v1_alt.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		refcat(o_size_w_ln "\midrule", nolabel) ///
 		mgroups("Outcome: Manager ln(salary) at destination",  ///
@@ -726,12 +737,12 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
 		"Manager experience = pc_exp_ln" "Manager quality = pc_fe" ///
 		"\\ \textbf{Destination firm}  \\ Destination firm size (ln) = d_size_w_ln" "Destination firm growth = d_growth_w"  ///
-		"\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln"  ///
+		"\textbf{Event controls} \\ # raided workers (ln) = lnraid" "# poached managers (ln) = pc_n_ln"  ///
 		, labels("\cmark" ""))
 		
 	// v2: with bottom and top quartiles of tenure overlap	
 		
-	esttab c1_spv_5 c2_spv_5 c3_spv_5 c4_spv_5 c5_spv_5 c5_spv_5_q1  c5_spv_5_q4 using "${results}/pred5_v2_alt.tex", booktabs  /// 
+	esttab c1_spv_5_alt c2_spv_5_alt c3_spv_5_alt c4_spv_5_alt c5_spv_5_alt c5_spv_5_q1_alt c5_spv_5_q4_alt using "${results}/pred5_v2_alt.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		refcat(o_size_w_ln "\midrule", nolabel) ///
 		mgroups("Outcome: Manager ln(salary) at destination",  ///
@@ -743,14 +754,14 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
 		"Manager experience = pc_exp_ln" "Manager quality = pc_fe" ///
 		"\\ \textbf{Destination firm}  \\ Destination firm size (ln) = d_size_w_ln" "Destination firm growth = d_growth_w"  ///
-		"\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln"  ///
+		"\textbf{Event controls} \\ # raided workers (ln) = lnraid" "# poached managers (ln) = pc_n_ln"  ///
 		, labels("\cmark" ""))	
 		
 	// version with tenure overlap as an explanatory variable
 	
 	foreach var in overlap overlap_ln overlap_sum overlap_sum_ln overlap_raided overlap_raided_ln overlap_raided_sum overlap_rd_sum_ln overlap_full overlap_full_sum overlap_fll_s_ln overlap_1y {
 		
-	esttab c1_spv_5_`var' c2_spv_5_`var' c3_spv_5_`var' c4_spv_5_`var' c5_spv_5_`var' using "${results}/pred5_`var'_alt.tex", booktabs  /// 
+	esttab c1spv5_`var'_a c2spv5_`var'_a c3spv5_`var'_a c4spv5_`var'_a c5spv5_`var'_a using "${results}/pred5_`var'_alt.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		refcat(o_size_w_ln "\midrule", nolabel) ///
 		mgroups("Outcome: Manager ln(salary) at destination",  ///
@@ -762,25 +773,11 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
 		"Manager experience = pc_exp_ln" "Manager quality = pc_fe" ///
 		"\\ \textbf{Destination firm}  \\ Destination firm size (ln) = d_size_w_ln" "Destination firm growth = d_growth_w"  ///
-		"\textbf{Event controls} \\ # raided workers (ln) = rd_coworker_n_ln" "# poached managers (ln) = pc_n_ln"  ///
+		"\textbf{Event controls} \\ # raided workers (ln) = lnraid" "# poached managers (ln) = pc_n_ln"  ///
 		, labels("\cmark" ""))	
 		
 	}	
-		
-// calculating the distributions
 
-	foreach var in overlap_full overlap_1y {
-
-		twoway kdensity tenure_`var' ///
-			if pc_ym >= ym(2010,1) & $spvcond & rd_coworker_n>=1 & rd_coworker_fe_m==0, ///
-			lcolor(black) lpattern(solid) lwidth(medthick) ///
-			xtitle("Tenure overlap measure") ///
-			ytitle("Cumulative probability") plotregion(lcolor(white)) 
-
-		graph export "${results}/final_pred5_dist_`var'_alt.pdf", as(pdf) replace 	
-	
-	}	
-	
 		
 	
 	

@@ -320,6 +320,8 @@ forvalues ym = 528/683 {
 
 // including variable that indicates tenure overlap of worker with pc individual
 
+/*
+
 	foreach e in spv emp dir { // dir5
 	forvalues ym=528/683 {
 		
@@ -372,6 +374,79 @@ forvalues ym = 528/683 {
 
 	}
 	}
+	
+*/
+	
+	
+// creating alternative measure of tenure overlap
+
+	foreach e in spv emp dir { // dir5
+	forvalues ym=528/683 {
+		
+	use "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", clear	
+		
+		if _N > 0 {
+			
+			// dropping the variables which will be recreated now ----- THIS IS TEMPORARY
+			drop tenure_ym n_pc tenure_ym_pc tenure_overlap_ym tenure_overlap
+
+		// construct variables that indicate tenure overlap
+		// tenure in RAIS is reported in december or last month of person in the firm
+		// let us compute a "running" tenure instead
+		gen tenure_ym = ym - hire_ym
+		
+		// identify cases we have more than 1 pc individual
+		egen n_pc = sum(pc_individual), by(event_id ym_rel)
+
+		// tenure of pc individual expanded to the event
+		gen tenure_ym_pc_aux = tenure_ym if (ym_rel <= -1 & pc_individual == 1)
+		egen tenure_ym_pc = max(tenure_ym_pc_aux), by(event_id ym_rel)
+		drop tenure_ym_pc_aux
+		*replace tenure_ym_pc = . if n_pc != 1 // BY REMOVING THIS RESTRICTION, WE ARE AUTOMATICALLY FOCUSING ON THE POACHED INDIVIDUAL WITH THE HIGHEST TENURE
+		
+			// if tenure_ym_pc is smaller than 12 in t=-1, REPLACE IT WITH 12 MONTHS!
+			gen tenure_ym_pc_l1_aux = tenure_ym_pc if ym_rel == -1
+			egen tenure_ym_pc_l1 = max(tenure_ym_pc_l1_aux), by(event_id)
+			
+			replace tenure_ym_pc = 12 if tenure_ym_pc_l1 < 12 & ym_rel == -1
+			replace tenure_ym_pc = 11 if tenure_ym_pc_l1 < 12 & ym_rel == -2
+			replace tenure_ym_pc = 10 if tenure_ym_pc_l1 < 12 & ym_rel == -3
+			replace tenure_ym_pc = 9 if tenure_ym_pc_l1 < 12 & ym_rel == -4
+			replace tenure_ym_pc = 8 if tenure_ym_pc_l1 < 12 & ym_rel == -5
+			replace tenure_ym_pc = 7 if tenure_ym_pc_l1 < 12 & ym_rel == -6
+			replace tenure_ym_pc = 6 if tenure_ym_pc_l1 < 12 & ym_rel == -7
+			replace tenure_ym_pc = 5 if tenure_ym_pc_l1 < 12 & ym_rel == -8
+			replace tenure_ym_pc = 4 if tenure_ym_pc_l1 < 12 & ym_rel == -9
+			replace tenure_ym_pc = 3 if tenure_ym_pc_l1 < 12 & ym_rel == -10
+			replace tenure_ym_pc = 2 if tenure_ym_pc_l1 < 12 & ym_rel == -11
+			replace tenure_ym_pc = 1 if tenure_ym_pc_l1 < 12 & ym_rel == -12
+			drop tenure_ym_pc_l1_aux tenure_ym_pc_l1
+			
+		// tenure overlap in each month
+		gen tenure_overlap_ym = .
+		replace tenure_overlap_ym = min(tenure_ym, tenure_ym_pc) ///
+			if plant_id == o_plant /// worker still employed in origin plant
+			& ym_rel <= -1 /// before the poaching event
+			& pc_individual == 0 // doesn't make sense for poached individuals
+		*replace tenure_overlap_ym = . if n_pc != 1
+		
+		// tenure overlap when co-employment terminates
+		egen tenure_overlap = max(tenure_overlap_ym), by(event_id cpf)
+		
+		// labeling new variables
+		label var tenure_ym          "Tenure (in Months)"
+		label var n_pc               "Number of Poached Individuals in the Event"
+		label var tenure_ym_pc       "Tenure (in Months) of the Poached Individual"
+		label var tenure_overlap_ym  "Cumulative Tenure Overlap (in Months)"
+		label var tenure_overlap     "Total Tenure Overlap"
+		
+		// saving
+		save "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'_newtenure", replace
+		
+		}
+
+	}
+	}	
 		
 *--------------------------*
 * EXIT

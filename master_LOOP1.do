@@ -84,7 +84,7 @@
 	
 	// constructing worker-level panel with coworkers of the poached individuals
 	*do "${prepare}/202503_cowork_panel_m"
-	*do "${prepare}/202503_cowork_panel_m_LOOP1"
+	do "${prepare}/202503_cowork_panel_m_LOOP1"
 	*do "${prepare}/202503_cowork_panel_m_LOOP2"
 	*do "${prepare}/202503_cowork_panel_m_LOOP3"
 	*do "${prepare}/202503_cowork_panel_m_LOOP4"

@@ -1,0 +1,33 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{9}{c}}
+                &\multicolumn{3}{c}{Manager to Manager}&\multicolumn{3}{c}{Manager to Non-Manager}&\multicolumn{3}{c}{Non-Manager to Manager}\\\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   &\multicolumn{1}{c}{(7)}   &\multicolumn{1}{c}{(8)}   &\multicolumn{1}{c}{(9)}   \\
+\midrule \textbf{Destination Firm}&            &            &            &            &            &            &            &            &            \\
+Size (ln employment)&    0.027***&    0.026***&    0.028***&    0.021***&    0.019***&    0.023***&    0.017** &    0.018** &    0.019** \\
+                &  (0.006)   &  (0.007)   &  (0.006)   &  (0.006)   &  (0.007)   &  (0.006)   &  (0.009)   &  (0.009)   &  (0.008)   \\
+Employment growth rate&    0.029***&    0.031***&    0.030***&    0.016*  &    0.022** &    0.017*  &    0.003   &    0.008   &    0.003   \\
+                &  (0.007)   &  (0.007)   &  (0.007)   &  (0.009)   &  (0.010)   &  (0.009)   &  (0.008)   &  (0.008)   &  (0.008)   \\
+\textbf{Origin firm}&            &            &            &            &            &            &            &            &            \\
+Size (ln employment)&            &    0.022***&            &            &    0.021** &            &            &    0.018   &            \\
+                &            &  (0.007)   &            &            &  (0.009)   &            &            &  (0.014)   &            \\
+Avg worker ability (AKM FE)&            &    0.102   &            &            &    0.063   &            &            &   -0.036   &            \\
+                &            &  (0.098)   &            &            &  (0.131)   &            &            &  (0.187)   &            \\
+Size (ln employment) $\times$ Avg worker ability&            &    0.034** &            &            &    0.031   &            &            &    0.044   &            \\
+                &            &  (0.016)   &            &            &  (0.021)   &            &            &  (0.031)   &            \\
+\textbf{Raided workers}&            &            &            &            &            &            &            &            &            \\
+Quantity (ln \# raided workers)&   -0.032***&   -0.028***&   -0.024***&   -0.018***&   -0.018***&    0.003   &   -0.005   &    0.000   &    0.006   \\
+                &  (0.006)   &  (0.006)   &  (0.007)   &  (0.006)   &  (0.006)   &  (0.007)   &  (0.008)   &  (0.008)   &  (0.012)   \\
+Avg ability (AKM FE)&            &            &    0.101***&            &            &    0.046** &            &            &    0.018   \\
+                &            &            &  (0.019)   &            &            &  (0.020)   &            &            &  (0.028)   \\
+Avg ability $\times$ quantity&            &            &    0.017   &            &            &    0.051***&            &            &    0.025   \\
+                &            &            &  (0.011)   &            &            &  (0.011)   &            &            &  (0.020)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+\\ \textbf{Event controls} \\ \# poached managers (ln) &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     2864   &     2854   &     2864   &     2603   &     2392   &     2603   &     1260   &     1260   &     1260   \\
+R-Squared       &    0.722   &    0.735   &    0.730   &    0.626   &    0.636   &    0.634   &    0.714   &    0.723   &    0.715   \\
+Prediction      &        4   &        5   &        6   &        4   &        5   &        6   &        4   &        5   &        6   \\
+\end{tabular}
+}

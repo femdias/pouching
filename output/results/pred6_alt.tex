@@ -1,0 +1,22 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{c}}
+                &\multicolumn{5}{c}{Outcome: Manager ln(salary) at destination}  \\\cmidrule(lr){2-6}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+\midrule        &            &            &            &            &            \\
+Quality of raided workers&    0.504***&    0.147***&    0.151***&    0.125***&    0.101***\\
+                &  (0.022)   &  (0.016)   &  (0.016)   &  (0.015)   &  (0.019)   \\
+\# raided workers (ln)&            &            &            &            &   -0.024***\\
+                &            &            &            &            &  (0.007)   \\
+Quality of raided workers $\times$ \# raided workers (ln)&            &            &            &            &    0.017   \\
+                &            &            &            &            &  (0.011)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm} \\ Dest. firm size &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Dest. firm growth &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+\textbf{Event controls} \\ \# poached managers (ln) &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     2864   &     2864   &     2864   &     2864   &     2864   \\
+R-Squared       &    0.188   &    0.707   &    0.710   &    0.727   &    0.730   \\
+\end{tabular}
+}

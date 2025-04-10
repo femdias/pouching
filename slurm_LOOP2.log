@@ -1,0 +1,1776 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      18.0
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2023 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-STATA-PC        https://www.stata.com
+                                   979-696-4600        stata@stata.com
+
+Stata license: 5-user 8-core network perpetual
+Serial number: 501806372583
+  Licensed to: Econ Department
+               Cornell University, Ithaca, NY
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do master_LOOP2.do /logs/slurm_LOOP2.log 
+
+. // Poaching Project
+. // Created by: Fabiano Dal-Ri
+. // (fd237@cornell.edu; dalri.fabiano@gmail.com)
+. // Date created: April 2024
+. 
+. // Purpose: Master file for the "Poaching" project
+. 
+. *--------------------------*
+. * SET UP
+. *--------------------------*
+. 
+.         // working directory
+.         cd "/home/ecco_rais/data/interwrk/daniela_group"
+/home/ecco_rais/data/interwrk/daniela_group
+
+.         
+.         // clearing session
+.         clear all
+
+.         macro drop _all
+
+. 
+.         // default color scheme
+.         set scheme s1color
+
+.         
+.         // globals -- input files
+.         
+.         global RAIS_Clean       "RAIS/output/data/identified/RAIS_Clean"
+
+.         global AKM              "akm/output/data"
+
+.         global JointMovements   "displacement/output/data/JointMovements"
+
+.         global Owners           "fabiano/jmp/output/data/Owners"
+
+.         global Firms_Panel      "fabiano/jmp/output/data/Firms_Panel"   
+
+.         
+.         // globals -- paths in this folder
+.         
+.         global input            "poaching/input"
+
+.         global prepare          "poaching/programs/prepare"
+
+.         global analysis         "poaching/programs/analysis"
+
+.         global auxiliary        "poaching/programs/auxiliary"
+
+.         global data             "poaching/output/data"
+
+.         global results          "poaching/output/results"
+
+.         global temp             "poaching/temp"
+
+.         
+.         // globals -- analysis
+.         
+.         global evt_vars evt_l9 evt_l8 evt_l7 evt_l6 evt_l5 evt_l4 evt_zero ev
+> t_l2 evt_l1 ///
+>               evt_f0 evt_f1 evt_f2 evt_f3 evt_f4 evt_f5 evt_f6 evt_f7 evt_f8 
+> evt_f9 evt_f10 evt_f11 evt_f12     
+
+.         
+. *-----------------------------------------*
+. * POPULATING INPUT FOLDER
+. *-----------------------------------------*
+. 
+.         // "auxiliary" folder:
+.         // -- ipca_brazil.dta: taken from other projects; no raw files availa
+> ble anymore
+.         // -- minwage_brazil.dta: taken from other projects; no raw files ava
+> ilable anymore
+.         // -- georegions.dta: taken from Fabiano's JMP
+.         
+. *-----------------------------------------*
+. * PREPARE
+. *-----------------------------------------*
+. 
+. // PART I: organizing RAIS data 
+. 
+.         // create a monthly RAIS panel
+.         *do "${prepare}/rais_m"
+.         
+. // PART II: constructing auxiliary data sets
+. 
+.         // calculate average number of employees
+.         *do "${prepare}/plantsize_m"
+.         
+.         // calculate wage growth variables at the plant-level
+.         *do "${prepare}/wagegrowth_m"
+.         
+.         // calculate industry growth (employment)
+.         *do "${prepare}/industrygrowth_m" // IN PROGRESS
+.         
+.         // calculate positive employment dummy variable
+.         *do "${prepare}/posemp_m"
+.                         
+.         // identify joing movements
+.         *do "${prepare}/jointmvt"
+. 
+. // PART III: constructing intermediate data sets
+. 
+.         // identifying poaching events
+.         *do "${prepare}/202503_evt_m"
+.         
+.         // constructing worker-level panel with coworkers of the poached indi
+> viduals
+.         *do "${prepare}/202503_cowork_panel_m"
+.         *do "${prepare}/202503_cowork_panel_m_LOOP1"
+.         do "${prepare}/202503_cowork_panel_m_LOOP2"
+
+. // Poaching Project
+. // Created by: Fabiano Dal-Ri
+. // (fd237@cornell.edu; dalri.fabiano@gmail.com)
+. // Date created: May 2024
+. 
+. // Purpose: Constructing the panel with coworkers
+. 
+. *--------------------------*
+. * BUILD
+. *--------------------------*
+. 
+. /*
+> 
+> // PART I: LIST ORIGIN AND DESTINATION PLANTS, ALONG WITH MONTHS OF INTEREST
+> 
+>         // this panel will be constructed separately for each cohort
+>         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
+>  673/683 { 
+>                         
+>         use "${data}/202503_evt_m", clear
+>         
+>         // let's only keep the unique event identifiers
+>         keep eventid d_plant o_plant pc_ym
+>         egen unique = tag(eventid)
+>         keep if unique == 1
+> 
+>         // keep the cohort we're looping over           
+>         keep if pc_ym == `ym'
+>         
+>                 // origin plants
+>                 
+>                 preserve
+>                 
+>                         keep eventid o_plant pc_ym
+>                         rename o_plant plant_id
+>                         compress
+>                         save "${temp}/202503_o_plant_`ym'", replace
+>         
+>                 restore
+>         
+>                 // destination plants
+>                 
+>                 preserve
+>                 
+>                         keep eventid d_plant pc_ym
+>                         rename d_plant plant_id
+>                         compress
+>                         save "${temp}/202503_d_plant_`ym'", replace
+>                         
+>                 restore
+>                 
+>         clear
+>         
+>         }
+>         
+> // PART II: LISTING COWORKERS AND FINDING THEM
+>         
+>         // this panel will be constructed separately for each cohort
+>         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
+>  673/683 {
+>         
+>         // origin coworkers
+>                 
+>                 local o_ym = `ym'-12 // origin coworkers are identified 12 mo
+> nths before the event
+>                 
+>                 use "${data}/rais_m/rais_m`o_ym'", clear
+>                 
+>                 merge m:1 plant_id using "${temp}/202503_o_plant_`ym'"
+>                 keep if _merge == 3
+>                 drop _merge
+>                 
+>                 keep cpf eventid pc_ym 
+>                 
+>                 compress
+>                 save "${temp}/202503_o_cw_`ym'", replace
+>                 
+>         // destination coworkers
+>         
+>                 local d_ym = `ym' // destination coworkers are identified at 
+> the time of the event
+>                 
+>                 use "${data}/rais_m/rais_m`d_ym'", clear
+>                 
+>                 merge m:1 plant_id using "${temp}/202503_d_plant_`ym'"
+>                 keep if _merge == 3
+>                 drop _merge
+>                 
+>                 keep cpf eventid pc_ym
+>                 
+>                 compress
+>                 save "${temp}/202503_d_cw_`ym'", replace
+>                 
+>         // finding these workers in monthly RAIS files  
+> 
+>         local ym_l12 = `ym' - 12
+>         local ym_f12 = `ym' + 12
+> 
+>         // origin coworkers
+>         
+>         forvalues yymm=`ym_l12'/`ym_f12' {
+>                 
+>                 use "${data}/rais_m/rais_m`yymm'", clear
+>                 
+>                 drop year month firm_id hire_year hire_month hire_day occ_1d 
+> occ_3d ///
+>                         sep_month contract_salary salary_type legal_nature cn
+> ae20_subclass
+>                 
+>                 merge 1:1 cpf using "${temp}/202503_o_cw_`ym'"
+>                 keep if _merge == 3
+>                 drop _merge
+>                 
+>                 compress
+>                 save "${temp}/202503_o_cw_`ym'_`yymm'", replace
+>                 
+>         }
+>         
+>         // destination coworkers
+>         
+>         forvalues yymm=`ym_l12'/`ym_f12' {
+>                 
+>                 use "${data}/rais_m/rais_m`yymm'", clear
+>                 
+>                 drop year month firm_id hire_year hire_month hire_day occ_1d 
+> occ_3d ///
+>                         sep_month contract_salary salary_type legal_nature cn
+> ae20_subclass
+>                 
+>                 merge 1:1 cpf using "${temp}/202503_d_cw_`ym'"
+>                 keep if _merge == 3
+>                 drop _merge
+>                 
+>                 compress
+>                 save "${temp}/202503_d_cw_`ym'_`yymm'", replace
+>                 
+>         }
+>         
+>         // combining all months in a cohort planel
+>                 
+>         // origin
+>         
+>         use "${temp}/202503_o_cw_`ym'", clear
+>                         
+>                 expand 25
+>                 sort cpf
+>                         
+>                         by cpf: gen ym = pc_ym - 13 + _n
+>                         format ym %tm
+>                         
+>                         gen ym_rel = ym - pc_ym
+>                         
+>                         local ym_l12 = `ym' - 12
+>                         local ym_f12 = `ym' + 12
+>                         
+>                         forvalues yymm=`ym_l12'/`ym_f12' {
+>                         
+>                                 merge 1:1 cpf ym using "${temp}/202503_o_cw_`
+> ym'_`yymm'", nogen update
+> 
+>                         }
+>         compress
+>         save "${temp}/202503_o_cw_`ym'_complete", replace
+>         
+>                 // removing heavy temporary files
+>                 
+>                 clear
+>                 forvalues yymm=`ym_l12'/`ym_f12' {
+>                 rm "${temp}/202503_o_cw_`ym'_`yymm'.dta"
+>                 }
+>         
+>         // destination
+>         
+>         use "${temp}/202503_d_cw_`ym'", clear
+>                         
+>                 expand 25
+>                 sort cpf
+>                         
+>                         by cpf: gen ym = pc_ym - 13 + _n
+>                         format ym %tm
+>                         
+>                         gen ym_rel = ym - pc_ym
+>                         
+>                         local ym_l12 = `ym' - 12
+>                         local ym_f12 = `ym' + 12
+>                         
+>                         forvalues yymm=`ym_l12'/`ym_f12' {
+>                         
+>                                 merge 1:1 cpf ym using "${temp}/202503_d_cw_`
+> ym'_`yymm'", nogen update
+> 
+>                         }
+>         compress
+>         save "${temp}/202503_d_cw_`ym'_complete", replace
+>         
+>                 // removing heavy temporary files
+>                 
+>                 clear
+>                 forvalues yymm=`ym_l12'/`ym_f12' {
+>                 rm "${temp}/202503_d_cw_`ym'_`yymm'.dta"
+>                 }
+>                         
+>         }
+>         
+> // PART III: ORGANIZING AUXILIARY DATA SETS
+> 
+>         // keeping event level information we need
+> 
+>                 use "${data}/202503_evt_m", clear
+>                 
+>                 keep eventid o_plant d_plant d_n_emp_lavg o_n_emp_lavg multip
+> le
+>                 
+>                 // only 1 observation for each event id
+>                 egen unique = tag(eventid)
+>                 keep if unique == 1
+>                 drop unique
+>                 
+>                 // saving
+>                 save "${temp}/202503_evt_vars", replace
+>                 
+>         // keeping list of poached individuals
+>         
+>                 use "${data}/202503_evt_m", clear
+>                 
+>                 drop if eventid == . // THIS WILL BE CORRECTED SOON!! DELETE 
+> THIS LINE THEN!!!
+>                 keep eventid pc_cpf pc_dir pc_spv pc_emp pc_d_dir pc_d_spv pc
+> _d_emp
+>                 rename pc_cpf cpf
+>                 
+>                 save "${temp}/202503_pc_ind", replace
+>                 
+> */
+.         
+. // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
+. 
+.         // this panel will be constructed separately for each cohort
+.         *foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/67
+> 1 673/683 { // COMPLETE LIST
+.         *forvalues ym=620/620 {                                              
+>             // O QUE JÁ RODOU     
+.         *foreach ym of numlist 601/611 {                                     
+>             // LOOP 1
+.         foreach ym of numlist 613/619 621/623 {                              
+>             // LOOP 2
+  2.         *foreach ym of numlist 625/635 {                                  
+>                // LOOP 3
+.         *foreach ym of numlist 637/647 {                                     
+>             // LOOP 4
+.         *foreach ym of numlist 649/659 {                                     
+>             // LOOP 5
+.         *foreach ym of numlist 661/671 {                                     
+>             // LOOP 6
+.         *foreach ym of numlist 673/683 {                                     
+>             // LOOP 7
+.         
+.         use "${temp}/202503_o_cw_`ym'_complete", clear
+  3.         
+.         // event-level information
+.         merge m:1 eventid using "${temp}/202503_evt_vars"
+  4.         drop if _merge == 2
+  5.         drop _merge
+  6.                 
+.         // wages variables
+.                 
+.                 // adjusting wages ---- THIS IS ALSO TEMPORARY --- WILL EVENT
+> UALLY BE DONE WHEN CONSTRUCTING THE MONTHLY DS
+.                 
+.                 gen year = year(dofm(ym))
+  7.                 merge m:1 year using "${input}/auxiliary/ipca_brazil"
+  8.                 generate index_2017 = index if year == 2017
+  9.                 egen index_base = max(index_2017)
+ 10.                 generate adj_index = index / index_base
+ 11.                 drop if _merge == 2
+ 12.                                 
+.                         // in level
+.                         generate wage_real = earn_avg_month_nom / adj_index
+ 13.                 
+.                         // in logs
+.                         gen wage_real_ln = ln(wage_real)
+ 14.                         
+.                 drop year index _merge index_2017 index_base adj_index
+ 15.                 
+.                 // other wage variables
+.                 
+.                 // wage in t=-12, level
+.                 
+.                 gen wage_real_l12_temp = wage_real if ym_rel == -12
+ 16.                 egen wage_real_l12 = max(wage_real_l12_temp), by(cpf)
+ 17.                 
+.                 drop wage_real_l12_temp
+ 18.                 
+.                 // wage in t=-12, log
+.                 
+.                 gen wage_real_ln_l12_temp = wage_real_ln if ym_rel == -12
+ 19.                 egen wage_real_ln_l12 = max(wage_real_ln_l12_temp), by(cpf
+> )
+ 20.                 
+.                 drop wage_real_ln_l12_temp
+ 21.                         
+.                 // wage in t=0, level
+.                 
+.                 gen wage_real_0_temp = wage_real if ym_rel == 0
+ 22.                 egen wage_real_0 = max(wage_real_0_temp), by(cpf)
+ 23.                 
+.                 drop wage_real_0_temp
+ 24.                 
+.                 // wage in t=0, log
+.                 
+.                 gen wage_real_ln_0_temp = wage_real_ln if ym_rel == 0
+ 25.                 egen wage_real_ln_0 = max(wage_real_ln_0_temp), by(cpf)
+ 26.                 
+.                 drop wage_real_ln_0_temp                
+ 27.                                 
+.         // identifying the poached individuals among the coworkers
+.         
+.         merge m:1 eventid cpf using "${temp}/202503_pc_ind"
+ 28.         drop if _merge == 2
+ 29.         drop _merge
+ 30.         
+.                 // organzing the newly added variables
+.                 replace pc_dir = 0 if pc_dir == .
+ 31.                 replace pc_spv = 0 if pc_spv == .
+ 32.                 replace pc_emp = 0 if pc_emp == .
+ 33.                 replace pc_d_dir = 0 if pc_d_dir == .
+ 34.                 replace pc_d_spv = 0 if pc_d_spv == .
+ 35.                 replace pc_d_emp = 0 if pc_d_emp == .
+ 36.                 
+.                 // unique variable identifying the poached individuals
+.                 gen pc_individual = (pc_dir == 1 | pc_spv == 1 | pc_emp == 1)
+ 37.                 
+.         // identify the raided individuals among the coworkers  
+.         
+.                 // set hiring year-month
+.                 gen hire_ym = ym(year(hire_date), month(hire_date))
+ 38.                 format hire_ym %tm
+ 39.                                 
+.                         // identify raiding events
+.                         
+.                         gen raid = ((ym == hire_ym) & (hire_ym != .)) /// hir
+> ed in the month
+>                                    & (plant_id == d_plant) /// moving to dest
+> ination plant
+>                                    & (pc_individual == 0) // not a poached in
+> dividual 
+ 40.                                  
+.                                 // let's identify who was raided more than on
+> ce
+.                                 egen raid_n = sum(raid), by(cpf)
+ 41.                                 gen raid_multiple = (raid_n > 1)
+ 42.                                 drop raid_n
+ 43.                                  
+.                                 // if an individual is raided more than once,
+>  use only the first raiding
+.                                 gen ym_raid = ym if raid == 1
+ 44.                                 egen ym_raid_min = min(ym_raid), by(cpf)
+ 45.                                 replace raid = 0 if ym_raid != ym_raid_min
+ 46.                                 drop ym_raid ym_raid_min
+ 47.                                 
+.                         // raid types according to occupations
+.                         
+.                                 // spv in origin
+.                                 
+.                                 gen spv_l12_temp = spv if ym_rel == -12
+ 48.                                 egen spv_l12 = max(spv_l12_temp), by(cpf)
+ 49.                                 
+.                                 gen raid_spv_temp = (raid == 1 & spv_l12 == 1
+> )
+ 50.                                 egen raid_spv = max(raid_spv_temp), by(cpf
+> )
+ 51.                                 
+.                                 drop spv_l12_temp raid_spv_temp
+ 52.                                 
+.                                 // dir in origin
+.                                 
+.                                 gen dir_l12_temp = dir if ym_rel == -12
+ 53.                                 egen dir_l12 = max(dir_l12_temp), by(cpf)
+ 54.                                 
+.                                 gen raid_dir_temp = (raid == 1 & dir_l12 == 1
+> )
+ 55.                                 egen raid_dir = max(raid_dir_temp), by(cpf
+> )
+ 56.                                 
+.                                 drop dir_l12_temp raid_dir_temp
+ 57.                                 
+.                                 // emp in origin
+.                                 
+.                                 gen emp = (dir == 0 & spv == 0) // THIS SHOUL
+> D BE CREATED WAY BEFORE!!!!!!!
+ 58.                                 
+.                                 gen emp_l12_temp = emp if ym_rel == -12
+ 59.                                 egen emp_l12 = max(emp_l12_temp), by(cpf)
+ 60.                                 
+.                                 gen raid_emp_temp = (raid == 1 & emp_l12 == 1
+> )
+ 61.                                 egen raid_emp = max(raid_emp_temp), by(cpf
+> )
+ 62.                                 
+.                                 drop emp_l12_temp raid_emp_temp
+ 63.                                 
+.                                 // spv in destination
+.                                 
+.                                 gen raid_d_spv_temp = (raid == 1 & spv == 1)
+ 64.                                 egen raid_d_spv = max(raid_d_spv_temp), by
+> (cpf)
+ 65.                                 
+.                                 drop raid_d_spv_temp
+ 66.                                 
+.                                 // dir in destination
+.                                 
+.                                 gen raid_d_dir_temp = (raid == 1 & dir == 1)
+ 67.                                 egen raid_d_dir = max(raid_d_dir_temp), by
+> (cpf)
+ 68.                                 
+.                                 drop raid_d_dir_temp
+ 69.                                 
+.                                 // emp in destination
+.                                 
+.                                 gen raid_d_emp_temp = (raid == 1 & emp == 1)
+ 70.                                 egen raid_d_emp = max(raid_d_emp_temp), by
+> (cpf)
+ 71.                                 
+.                                 drop raid_d_emp_temp
+ 72.                                 
+.                         // identify raided individuals
+.                         egen raid_individual = max(raid), by(cpf)
+ 73.                         
+.         // saving
+.         compress
+ 74.         save "${temp}/202503_o_cw_`ym'_complete", replace
+ 75.         
+.         }       
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       372,929
+        from master                         0  (_merge==1)
+        from using                    372,929  (_merge==2)
+
+    Matched                        63,172,800  (_merge==3)
+    -----------------------------------------
+(372,929 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        63,172,800  (_merge==3)
+    -----------------------------------------
+(63,172,822 missing values generated)
+(23 observations deleted)
+(10,636,325 missing values generated)
+(10,636,325 missing values generated)
+(60,645,888 missing values generated)
+(60,645,888 missing values generated)
+(61,131,424 missing values generated)
+(12,138,400 missing values generated)
+(61,131,424 missing values generated)
+(12,138,400 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    63,461,886
+        from master                63,012,275  (_merge==1)
+        from using                    449,611  (_merge==2)
+
+    Matched                           160,525  (_merge==3)
+    -----------------------------------------
+(449,611 observations deleted)
+(63,012,275 real changes made)
+(63,012,275 real changes made)
+(63,012,275 real changes made)
+(63,012,275 real changes made)
+(63,012,275 real changes made)
+(63,012,275 real changes made)
+(10,636,325 missing values generated)
+(63,154,317 missing values generated)
+(62,728,275 missing values generated)
+(702 real changes made)
+(60,645,888 missing values generated)
+(60,645,888 missing values generated)
+(60,645,888 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,106,232,000 bytes saved)
+file poaching/temp/202503_o_cw_613_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       372,932
+        from master                         0  (_merge==1)
+        from using                    372,932  (_merge==2)
+
+    Matched                        63,907,650  (_merge==3)
+    -----------------------------------------
+(372,932 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        63,907,650  (_merge==3)
+    -----------------------------------------
+(63,907,672 missing values generated)
+(23 observations deleted)
+(10,657,934 missing values generated)
+(10,657,934 missing values generated)
+(61,351,344 missing values generated)
+(61,351,344 missing values generated)
+(61,839,676 missing values generated)
+(12,208,300 missing values generated)
+(61,839,676 missing values generated)
+(12,208,300 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    64,194,630
+        from master                63,745,100  (_merge==1)
+        from using                    449,530  (_merge==2)
+
+    Matched                           162,550  (_merge==3)
+    -----------------------------------------
+(449,530 observations deleted)
+(63,745,100 real changes made)
+(63,745,100 real changes made)
+(63,745,100 real changes made)
+(63,745,100 real changes made)
+(63,745,100 real changes made)
+(63,745,100 real changes made)
+(10,657,934 missing values generated)
+(63,890,246 missing values generated)
+(63,483,275 missing values generated)
+(429 real changes made)
+(61,351,344 missing values generated)
+(61,351,344 missing values generated)
+(61,351,344 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,153,997,250 bytes saved)
+file poaching/temp/202503_o_cw_614_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       373,095
+        from master                         0  (_merge==1)
+        from using                    373,095  (_merge==2)
+
+    Matched                        68,211,075  (_merge==3)
+    -----------------------------------------
+(373,095 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        68,211,075  (_merge==3)
+    -----------------------------------------
+(68,211,097 missing values generated)
+(23 observations deleted)
+(11,126,491 missing values generated)
+(11,126,491 missing values generated)
+(65,482,632 missing values generated)
+(65,482,632 missing values generated)
+(65,981,804 missing values generated)
+(12,479,300 missing values generated)
+(65,981,804 missing values generated)
+(12,479,300 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    68,506,245
+        from master                68,056,400  (_merge==1)
+        from using                    449,845  (_merge==2)
+
+    Matched                           154,675  (_merge==3)
+    -----------------------------------------
+(449,845 observations deleted)
+(68,056,400 real changes made)
+(68,056,400 real changes made)
+(68,056,400 real changes made)
+(68,056,400 real changes made)
+(68,056,400 real changes made)
+(68,056,400 real changes made)
+(11,126,491 missing values generated)
+(68,194,281 missing values generated)
+(67,805,725 missing values generated)
+(580 real changes made)
+(65,482,632 missing values generated)
+(65,482,632 missing values generated)
+(65,482,632 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,433,719,875 bytes saved)
+file poaching/temp/202503_o_cw_615_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       372,563
+        from master                         0  (_merge==1)
+        from using                    372,563  (_merge==2)
+
+    Matched                        67,976,225  (_merge==3)
+    -----------------------------------------
+(372,563 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        67,976,225  (_merge==3)
+    -----------------------------------------
+(67,976,247 missing values generated)
+(23 observations deleted)
+(11,602,819 missing values generated)
+(11,602,819 missing values generated)
+(65,257,176 missing values generated)
+(65,257,176 missing values generated)
+(65,775,277 missing values generated)
+(12,952,525 missing values generated)
+(65,775,277 missing values generated)
+(12,952,525 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    68,249,945
+        from master                67,800,925  (_merge==1)
+        from using                    449,020  (_merge==2)
+
+    Matched                           175,300  (_merge==3)
+    -----------------------------------------
+(449,020 observations deleted)
+(67,800,925 real changes made)
+(67,800,925 real changes made)
+(67,800,925 real changes made)
+(67,800,925 real changes made)
+(67,800,925 real changes made)
+(67,800,925 real changes made)
+(11,602,819 missing values generated)
+(67,959,026 missing values generated)
+(67,558,025 missing values generated)
+(471 real changes made)
+(65,257,176 missing values generated)
+(65,257,176 missing values generated)
+(65,257,176 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,418,454,625 bytes saved)
+file poaching/temp/202503_o_cw_616_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       372,777
+        from master                         0  (_merge==1)
+        from using                    372,777  (_merge==2)
+
+    Matched                        68,563,000  (_merge==3)
+    -----------------------------------------
+(372,777 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        68,563,000  (_merge==3)
+    -----------------------------------------
+(68,563,022 missing values generated)
+(23 observations deleted)
+(11,614,913 missing values generated)
+(11,614,913 missing values generated)
+(65,820,480 missing values generated)
+(65,820,480 missing values generated)
+(66,333,842 missing values generated)
+(12,834,050 missing values generated)
+(66,333,842 missing values generated)
+(12,834,050 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    68,849,694
+        from master                68,400,175  (_merge==1)
+        from using                    449,519  (_merge==2)
+
+    Matched                           162,825  (_merge==3)
+    -----------------------------------------
+(449,519 observations deleted)
+(68,400,175 real changes made)
+(68,400,175 real changes made)
+(68,400,175 real changes made)
+(68,400,175 real changes made)
+(68,400,175 real changes made)
+(68,400,175 real changes made)
+(11,614,913 missing values generated)
+(68,543,649 missing values generated)
+(68,092,925 missing values generated)
+(548 real changes made)
+(65,820,480 missing values generated)
+(65,820,480 missing values generated)
+(65,820,480 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,456,595,000 bytes saved)
+file poaching/temp/202503_o_cw_617_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       373,110
+        from master                         0  (_merge==1)
+        from using                    373,110  (_merge==2)
+
+    Matched                        63,783,275  (_merge==3)
+    -----------------------------------------
+(373,110 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        63,783,275  (_merge==3)
+    -----------------------------------------
+(63,783,297 missing values generated)
+(23 observations deleted)
+(11,400,669 missing values generated)
+(11,400,669 missing values generated)
+(61,231,944 missing values generated)
+(61,231,944 missing values generated)
+(61,730,067 missing values generated)
+(12,453,075 missing values generated)
+(61,730,067 missing values generated)
+(12,453,075 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    64,068,617
+        from master                63,619,150  (_merge==1)
+        from using                    449,467  (_merge==2)
+
+    Matched                           164,125  (_merge==3)
+    -----------------------------------------
+(449,467 observations deleted)
+(63,619,150 real changes made)
+(63,619,150 real changes made)
+(63,619,150 real changes made)
+(63,619,150 real changes made)
+(63,619,150 real changes made)
+(63,619,150 real changes made)
+(11,400,669 missing values generated)
+(63,763,847 missing values generated)
+(63,320,250 missing values generated)
+(907 real changes made)
+(61,231,944 missing values generated)
+(61,231,944 missing values generated)
+(61,231,944 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,145,912,875 bytes saved)
+file poaching/temp/202503_o_cw_618_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       372,694
+        from master                         0  (_merge==1)
+        from using                    372,694  (_merge==2)
+
+    Matched                        70,557,875  (_merge==3)
+    -----------------------------------------
+(372,694 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        70,557,875  (_merge==3)
+    -----------------------------------------
+(70,557,897 missing values generated)
+(23 observations deleted)
+(12,198,098 missing values generated)
+(12,198,098 missing values generated)
+(67,735,560 missing values generated)
+(67,735,560 missing values generated)
+(68,276,136 missing values generated)
+(13,514,400 missing values generated)
+(68,276,136 missing values generated)
+(13,514,400 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    70,840,461
+        from master                70,391,100  (_merge==1)
+        from using                    449,361  (_merge==2)
+
+    Matched                           166,775  (_merge==3)
+    -----------------------------------------
+(449,361 observations deleted)
+(70,391,100 real changes made)
+(70,391,100 real changes made)
+(70,391,100 real changes made)
+(70,391,100 real changes made)
+(70,391,100 real changes made)
+(70,391,100 real changes made)
+(12,198,098 missing values generated)
+(70,539,195 missing values generated)
+(70,104,600 missing values generated)
+(549 real changes made)
+(67,735,560 missing values generated)
+(67,735,560 missing values generated)
+(67,735,560 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,586,261,875 bytes saved)
+file poaching/temp/202503_o_cw_619_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       373,328
+        from master                         0  (_merge==1)
+        from using                    373,328  (_merge==2)
+
+    Matched                        65,178,925  (_merge==3)
+    -----------------------------------------
+(373,328 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        65,178,925  (_merge==3)
+    -----------------------------------------
+(65,178,947 missing values generated)
+(23 observations deleted)
+(11,730,015 missing values generated)
+(11,730,015 missing values generated)
+(62,571,768 missing values generated)
+(62,571,768 missing values generated)
+(63,081,146 missing values generated)
+(12,734,450 missing values generated)
+(63,081,146 missing values generated)
+(12,734,450 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    65,477,137
+        from master                65,027,175  (_merge==1)
+        from using                    449,962  (_merge==2)
+
+    Matched                           151,750  (_merge==3)
+    -----------------------------------------
+(449,962 observations deleted)
+(65,027,175 real changes made)
+(65,027,175 real changes made)
+(65,027,175 real changes made)
+(65,027,175 real changes made)
+(65,027,175 real changes made)
+(65,027,175 real changes made)
+(11,730,015 missing values generated)
+(65,160,388 missing values generated)
+(64,727,400 missing values generated)
+(476 real changes made)
+(62,571,768 missing values generated)
+(62,571,768 missing values generated)
+(62,571,768 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,236,630,125 bytes saved)
+file poaching/temp/202503_o_cw_621_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       373,585
+        from master                         0  (_merge==1)
+        from using                    373,585  (_merge==2)
+
+    Matched                        64,920,925  (_merge==3)
+    -----------------------------------------
+(373,585 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        64,920,925  (_merge==3)
+    -----------------------------------------
+(64,920,947 missing values generated)
+(23 observations deleted)
+(11,983,953 missing values generated)
+(11,983,953 missing values generated)
+(62,324,088 missing values generated)
+(62,324,088 missing values generated)
+(62,838,531 missing values generated)
+(12,861,075 missing values generated)
+(62,838,531 missing values generated)
+(12,861,075 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    65,223,375
+        from master                64,773,250  (_merge==1)
+        from using                    450,125  (_merge==2)
+
+    Matched                           147,675  (_merge==3)
+    -----------------------------------------
+(450,125 observations deleted)
+(64,773,250 real changes made)
+(64,773,250 real changes made)
+(64,773,250 real changes made)
+(64,773,250 real changes made)
+(64,773,250 real changes made)
+(64,773,250 real changes made)
+(11,983,953 missing values generated)
+(64,904,080 missing values generated)
+(64,512,150 missing values generated)
+(494 real changes made)
+(62,324,088 missing values generated)
+(62,324,088 missing values generated)
+(62,324,088 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (4,219,860,125 bytes saved)
+file poaching/temp/202503_o_cw_622_complete.dta saved
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       374,494
+        from master                         0  (_merge==1)
+        from using                    374,494  (_merge==2)
+
+    Matched                        52,934,775  (_merge==3)
+    -----------------------------------------
+(374,494 observations deleted)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                            23
+        from master                         0  (_merge==1)
+        from using                         23  (_merge==2)
+
+    Matched                        52,934,775  (_merge==3)
+    -----------------------------------------
+(52,934,797 missing values generated)
+(23 observations deleted)
+(9,337,635 missing values generated)
+(9,337,635 missing values generated)
+(50,817,384 missing values generated)
+(50,817,384 missing values generated)
+(51,224,928 missing values generated)
+(10,188,600 missing values generated)
+(51,224,928 missing values generated)
+(10,188,600 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                    53,263,797
+        from master                52,812,650  (_merge==1)
+        from using                    451,147  (_merge==2)
+
+    Matched                           122,125  (_merge==3)
+    -----------------------------------------
+(451,147 observations deleted)
+(52,812,650 real changes made)
+(52,812,650 real changes made)
+(52,812,650 real changes made)
+(52,812,650 real changes made)
+(52,812,650 real changes made)
+(52,812,650 real changes made)
+(9,337,635 missing values generated)
+(52,918,751 missing values generated)
+(52,544,025 missing values generated)
+(394 real changes made)
+(50,817,384 missing values generated)
+(50,817,384 missing values generated)
+(50,817,384 missing values generated)
+  variable multiple was float now byte
+  variable pc_dir was float now byte
+  variable pc_spv was float now byte
+  variable pc_emp was float now byte
+  variable pc_d_dir was float now byte
+  variable pc_d_spv was float now byte
+  variable pc_d_emp was float now byte
+  variable pc_individual was float now byte
+  variable hire_ym was float now int
+  variable raid was float now byte
+  variable raid_multiple was float now byte
+  variable spv_l12 was float now byte
+  variable raid_spv was float now byte
+  variable dir_l12 was float now byte
+  variable raid_dir was float now byte
+  variable emp was float now byte
+  variable emp_l12 was float now byte
+  variable raid_emp was float now byte
+  variable raid_d_spv was float now byte
+  variable raid_d_dir was float now byte
+  variable raid_d_emp was float now byte
+  variable raid_individual was float now byte
+  (3,440,760,375 bytes saved)
+file poaching/temp/202503_o_cw_623_complete.dta saved
+
+.         
+.         
+.         
+.         /*
+>                                 
+>         // adding worker FEs --- CHECK WITH FELIIPE WHICH DATA SETS I SHOULD 
+> USE!
+> 
+>                 
+>                         // worker FEs (from "low-tech" AKM model)
+>                         merge m:1 cpf using "${AKM}/AKM_2003_2008_Worker", ke
+> ep(master match) nogen
+>                 
+>         
+> 
+> 
+> // including variable that indicates tenure overlap of worker with pc individ
+> ual
+> 
+>         foreach e in spv emp dir { // dir5
+>         forvalues ym=528/683 {
+>                 
+>         use "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", clear 
+>                 
+>                 if _N > 0 {
+> 
+>                 // construct variables that indicate tenure overlap
+>                 // tenure in RAIS is reported in december or last month of pe
+> rson in the firm
+>                 // let us compute a "running" tenure instead
+>                 gen tenure_ym = ym - hire_ym
+>                 
+>                 // identify cases we have more than 1 pc individual -- we won
+> 't calculate overlap in this case
+>                 egen n_pc = sum(pc_individual), by(event_id ym_rel)
+> 
+>                 // tenure of pc individual expanded to the event
+>                 gen tenure_ym_pc_aux = tenure_ym if (ym_rel <= -1 & pc_indivi
+> dual == 1)
+>                 egen tenure_ym_pc = max(tenure_ym_pc_aux), by(event_id ym_rel
+> )
+>                 drop tenure_ym_pc_aux
+>                 replace tenure_ym_pc = . if n_pc != 1
+>                 
+>                         // if tenure_ym_pc is smaller than 12 in t=-1, do not
+>  calculate this
+>                         gen tenure_ym_pc_l1_aux = tenure_ym_pc if ym_rel == -
+> 1
+>                         egen tenure_ym_pc_l1 = max(tenure_ym_pc_l1_aux), by(e
+> vent_id)
+>                         replace tenure_ym_pc = . if tenure_ym_pc_l1 < 12
+>                         drop tenure_ym_pc_l1_aux tenure_ym_pc_l1
+>                         
+>                 // tenure overlap in each month
+>                 gen tenure_overlap_ym = .
+>                 replace tenure_overlap_ym = min(tenure_ym, tenure_ym_pc) ///
+>                         if plant_id == o_plant /// worker still employed in o
+> rigin plant
+>                         & ym_rel <= -1 /// before the poaching event
+>                         & pc_individual == 0 // doesn't make sense for poache
+> d individuals
+>                 replace tenure_overlap_ym = . if n_pc != 1
+>                 
+>                 // tenure overlap when co-employment terminates
+>                 egen tenure_overlap = max(tenure_overlap_ym), by(event_id cpf
+> )
+>                 
+>                 // labeling new variables
+>                 label var tenure_ym          "Tenure (in Months)"
+>                 label var n_pc               "Number of Poached Individuals i
+> n the Event"
+>                 label var tenure_ym_pc       "Tenure (in Months) of the Poach
+> ed Individual"
+>                 label var tenure_overlap_ym  "Cumulative Tenure Overlap (in M
+> onths)"
+>                 label var tenure_overlap     "Total Tenure Overlap"
+>                 
+>                 // saving
+>                 save "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", re
+> place
+>                 
+>                 }
+> 
+>         }
+>         }
+>                 
+> *--------------------------*
+> * EXIT
+> *--------------------------*
+> 
+> cap rm "${temp}/key_evts_m.dta"
+> cap rm "${temp}/o_plants.dta"
+> cap rm "${temp}/cw.dta"
+> 
+> forvalues ym=516/695 {
+> 
+>         cap rm "${temp}/cw_`ym'.dta"
+> 
+> }
+> 
+> clear
+
+end of do-file
+
+.         *do "${prepare}/202503_cowork_panel_m_LOOP3"
+.         *do "${prepare}/202503_cowork_panel_m_LOOP4"
+.         *do "${prepare}/202503_cowork_panel_m_LOOP5"
+.         *do "${prepare}/202503_cowork_panel_m_LOOP6"
+.         *do "${prepare}/202503_cowork_panel_m_LOOP7"
+.         
+.         // constructing event-level panel with poaching plants (destination p
+> lants)
+.         *do "${prepare}/202503_evt_panel_m"
+.         
+.         // event-level data set
+.         *do "${prepare}/202503_poach_ind"
+.         
+.         // constructing worker-level data set with poaching firms in t=0
+.         *do "${prepare}/dest_panel_m"
+.         
+.         // identifying event types (using destination occupation)
+.         *do "${prepare}/evt_type_m"
+.         
+.         // imposing sample selection restrictions to the analysis
+.         *do "${prepare}/sample_selection"
+.         
+. // PART IV: constructing main data sets
+. 
+.         *do "${prepare}/202503_poaching_evt"
+. 
+. *-----------------------------------------*
+. * ANALYSIS (FINAL) - FELIPE: USE THIS
+. *-----------------------------------------*
+. 
+. // MAIN ANALYSIS
+. 
+.         // imposing restrictions and listing the events we want
+.         *do "${analysis}/eventlist"     
+.         
+.         // exhibits
+.         *do "${analysis}/final_sumstats"
+.         *do "${analysis}/final_pred1"
+.         *do "${analysis}/final_pred2"
+.         *do "${analysis}/final_pred3"
+.         *do "${analysis}/final_pred4"
+.         *do "${analysis}/final_pred5"
+.         *do "${analysis}/final_pred6"
+.         *do "${analysis}/final_pred7"
+.         *do "${analysis}/final_alternatives"
+.         
+.         // other analyses
+.         *do "${analysis}/final_preddelta"
+.         
+. // TESTING OTHER HYPOTHESES
+. 
+.         // hypothesis: managers are the owners of the destination firm (spino
+> ffs)
+.         *do "${analysis}/test_spinoffs"
+.         
+.         // hypothesis: tenure overlap + strength of information 
+.         *do "${analysis}/summary_tenureoverlap"
+.         
+. // ROBUSTNESS: RESULTS WITHOUT RECLASSIFICATIONS        
+. 
+.         // imposing restrictions and listing the events we want
+.         *do "${analysis}/eventlist_noreclass"
+.         
+.         // organing exhibits before submission
+.         *do "${analysis}/final_pred1_noreclass"
+.         *do "${analysis}/final_pred2_noreclass"
+.         *do "${analysis}/final_pred3_noreclass"
+.         *do "${analysis}/final_pred4_noreclass"
+.         *do "${analysis}/final_pred5_noreclass"
+.         *do "${analysis}/final_pred6_noreclass"
+.         *do "${analysis}/final_pred7_noreclass"
+.         *do "${analysis}/final_alternatives_noreclass"
+. 
+. // ROBUSTNESS: TABLES WITH 0 RAIDES
+. 
+.         *do "${analysis}/final_pred4_zero"
+.         *do "${analysis}/final_pred5_zero"
+.         *do "${analysis}/final_alternatives_zero"
+.         
+.         *do "${analysis}/final_pred4_zeroonly"
+.         *do "${analysis}/final_pred5_zeroonly"
+.         *do "${analysis}/final_alternatives_zeroonly"
+. 
+. *-----------------------------------------*
+. * ANALYSIS (202503 WORK) -- FABIANO'S STUFF
+. *-----------------------------------------*
+. 
+. // MAIN ANALYSIS
+. 
+.         // imposing restrictions and listing the events we want
+.         *do "${analysis}/eventlist"     
+.         
+.         // exhibits
+.         *do "${analysis}/202503_sumstats"
+.         *do "${analysis}/202503_pred1"
+.         *do "${analysis}/202503_pred2"
+.         *do "${analysis}/final_pred3"
+.         *do "${analysis}/202503_pred4"
+.         *do "${analysis}/202503_pred5"
+.         *do "${analysis}/202503_pred6"
+.         *do "${analysis}/final_pred7"
+.         *do "${analysis}/final_alternatives"
+.         
+.         // other analyses
+.         *do "${analysis}/final_preddelta"
+.         
+. // TESTING OTHER HYPOTHESES
+. 
+.         // hypothesis: managers are the owners of the destination firm (spino
+> ffs)
+.         *do "${analysis}/test_spinoffs"
+.         
+.         // hypothesis: tenure overlap + strength of information 
+.         *do "${analysis}/summary_tenureoverlap"
+.         
+. // ROBUSTNESS: RESULTS WITHOUT RECLASSIFICATIONS        
+. 
+.         // imposing restrictions and listing the events we want
+.         *do "${analysis}/eventlist_noreclass"
+.         
+.         // organing exhibits before submission
+.         *do "${analysis}/final_pred1_noreclass"
+.         *do "${analysis}/final_pred2_noreclass"
+.         *do "${analysis}/final_pred3_noreclass"
+.         *do "${analysis}/final_pred4_noreclass"
+.         *do "${analysis}/final_pred5_noreclass"
+.         *do "${analysis}/final_pred6_noreclass"
+.         *do "${analysis}/final_pred7_noreclass"
+.         *do "${analysis}/final_alternatives_noreclass"
+. 
+. // ROBUSTNESS: TABLES WITH 0 RAIDES
+. 
+.         *do "${analysis}/final_pred4_zero"
+.         *do "${analysis}/final_pred5_zero"
+.         *do "${analysis}/final_alternatives_zero"
+.         
+.         *do "${analysis}/final_pred4_zeroonly"
+.         *do "${analysis}/final_pred5_zeroonly"
+.         *do "${analysis}/final_alternatives_zeroonly"
+. 
+. 
+. 
+. 
+. 
+.         
+. 
+. 
+. 
+.         
+. 
+. *****************************************************************************
+> **
+. /* ARCHIVE
+> 
+> *--------------------------- mar 27 2025 archive ----------------------------
+> ---
+> 
+>         // Figure 1: 
+>         
+>                 // baseline graph
+>                 do "${analysis}/es_baseline"
+>         
+>                 // understanding baseline (raw averages)
+>                 do "${analysis}/es_baseline_raw" // FD NOTE: I haven't organi
+> zed this yet
+>         
+>         // Figure 2: 
+>         
+>                 // quality of new hires
+>                 do "${analysis}/quality_dest_hire"
+>         
+>         // Table 1:
+>         
+>                 // summary statistics
+>                 do "${analysis}/summary_statistics"
+>         
+>         // Table 2
+>         
+>                 // information available
+>                 do "${analysis}/table2"
+>                 
+>         // Table 3
+>         
+>                 // information is needed
+>                 do "${analysis}/table3"
+>                 
+>         // Destination growth
+>         
+>                 // # of hires and # total employess
+>                 do "${analysis}/destgrowth"
+>                 
+>         // Trying something different: overlap between spv-spv and emp-emp
+>         do "${analysis}/overlap"
+>         
+>         // Review why there are missing values
+>         do "${auxiliary}/review_missing_variables"
+>         
+>         // Check if some variables are created correctly
+>         do "${auxiliary}/vars_dont_look_right"
+>         
+>         // Check creation of variables for which we nly had the log
+>         do "${auxiliary}/check_vars_in_levels"
+> 
+> *--------------------------- nov 19 2024 archive ----------------------------
+> ---
+> 
+>         // Figure 3: 
+>         
+>                 // CDF quality at origin
+>                 do "${analysis}/quality_origin"
+>         
+>                 // reg quality at origin
+>                 do "${analysis}/reg_quality_origin"
+>                 
+>                 // generating CDF for subset of events that have at least 1 r
+> aided worker and at least 1 moveable worker
+>                 do "${analysis}/quality_origin_sel_evts"
+>                 
+>         // Table 2:
+>         
+>                 // v1
+>                 do "${analysis}/table2"
+>         
+>                 // v2: include ind. and event time FE
+>                 do "${analysis}/table2_v2"
+> 
+>         // Table 3:
+>         
+>                 // v1
+>                 do "${analysis}/table3"
+>         
+>                 // v2: include ind. and event time FE
+>                 do "${analysis}/table3_v2"
+>                 
+> *-------------------------- other archive -----------------------------------
+> --
+> 
+> 
+>         // firm-level event study: baseline figures with raw averages
+>         *do "${analysis}/es_raw_firm"
+>         
+>         // firm-level event study: analysis using regressions
+>         *do "${analysis}/es_reg_firm"
+>         
+>                 // heterogeneity: by type of movement (to dir, to spv, to emp
+> )
+>                 *do "${analysis}/es_reg_firm_type"
+>                 
+>                 // heterogeneity: by origin firm size
+>                 *do "${analysis}/es_reg_firm_originsize"
+>                 
+>                 // heterogeneity: by destination firm size
+>                 *do "${analysis}/es_reg_firm_destinationsize"
+>                 
+>                 // heterogeneity: by region (same or different)
+>                 *do "${analysis}/es_reg_firm_region"
+>         
+>         // hires-level "event study" -- ?? -- tentative analysis so far 
+>         *do "${analysis}/es_reg_hires"
+>         
+>         // table: wage regressions
+>         
+>                 // testing information hypothesis
+>                 *do "${analysis}/reg_wage_info"         
+> 
+> *------------------------------ monthly rs ----------------------------------
+> ---
+> 
+>         // prepare
+> 
+>                 // organizing full RAIS (monthly panel)
+>                 do "programs/prepare/archive_20240708/rais_m_rs"
+>                 
+>                 // identifying poaching events
+>                 do "programs/prepare/archive_20240708/evt_m_rs"
+>                 
+>                 // constructing worker-level data set with poaching events in
+>  t=0
+>                 do "programs/prepare/archive_20240708/evt_work_m_rs"
+>                 
+>                 // constructing worker-level panel with coworkers only
+>                 do "programs/prepare/archive_20240708/cowork_panel_m_rs"
+>                 
+>                 // constructing event-level panel with poaching plants (d_pla
+> nts)
+>                 do "programs/prepare/archive_20240708/evt_panel_m_rs"
+>                 
+>                 // auxiliary data set: wages for coworkers
+>                 do "programs/prepare/archive_20240708/wage_real_ln_cw"
+>                 
+>         // analysis
+>         
+>                 // sample selection (imposing additional criteria on the even
+> ts)
+>                 do "programs/analysis/archive_20240708/sample_selection"
+> 
+>                 // summary stats
+>                 do "programs/analysis/archive_20240708/sumstats"
+>         
+>                 // firm-level event study
+>                 do "programs/analysis/archive_20240708/es_firm_dir"
+>         
+>                 // wage distribution: before vs. after poaching
+>                 do "programs/analysis/archive_20240708/wage_dist_dir"
+>         
+>                 // wage regression: poached workers only; correlation with "i
+> nformation"
+>                 do "programs/analysis/archive_20240708/wage_corrinfo_dir"
+>         
+>                 // wage regression: comparison with similar retained workers
+>                 do "programs/analysis/archive_20240708/wage_xretained_dir"
+> 
+> 
+> *------------------------------- quarterly ----------------------------------
+> ---
+> 
+>         // organizing quarterly panel
+>         do "programs/prepare/archive_20240430/RAIS_Quarterly_RS"
+>         
+>         // identifying poaching events
+>         do "programs/prepare/archive_20240430/PoachingEvents_Quarterly_RS"
+>         
+>                 // Daniela's version
+>                 do "programs/prepare/archive_20240430/evtdefine"
+>         
+>         // constructing the panel with coworkers
+>         do "programs/prepare/archive_20240430/CoWorkers_Panel_Quarterly_RS"
+>         
+>                 // Daniela's version
+>                 do "programs/prepare/archive_20240430/coworker_panel_q_rs"
+>         
+>         // creating the panel with poaching firms
+>         do "programs/prepare/archive_20240430/PoachingEvents_Panel_Quarterly_
+> RS"
+>         
+>                 // Daniela's version
+>                 do "programs/prepare/archive_20240430/events_panel_rs" 
+>                 
+
+end of do-file

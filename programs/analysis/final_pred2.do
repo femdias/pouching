@@ -647,6 +647,12 @@
 	
 	rename plant_id d_plant
 	
+			// saving a temporary file
+			save "${temp}/final_pred2_spv_improv", replace
+			
+			// using this temporary file
+			use "${temp}/final_pred2_spv_improv", clear
+	
 	// generate unique id
 	egen unique_id = group(event_id spv)
 	
@@ -784,7 +790,16 @@
 		graph export "${results}/pred2_pdf_`var'.pdf", as(pdf) replace
 		
 	}	
+	
+	// number of improving firms using each of the measures
+	
+	tab improv_median_rgi50_evt if ym_rel == 0   & pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) // 5,425 events -- 3,127 are improvers
 		
+	tab improv_median_llm50_evt if ym_rel == 0 &  pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12)  // 5,374 events -- 2,951 are improvers
+	
+	// total number of events
+	
+	tab count if ym_rel == 0 &  pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12)
 	
 *--------------------------*
 * PLACEBO EVENTS
@@ -813,6 +828,12 @@
 	} 
 	
 	rename plant_id d_plant
+	
+			// saving a temporary file
+			save "${temp}/final_pred2_emp_improv", replace
+			
+			// using this temporary file
+			use "${temp}/final_pred2_emp_improv", clear
 	
 		// hire variables: winsorize to remove outliers 
 		winsor d_h_emp_o, gen(d_h_emp_o_w) p(0.01) highonly
@@ -851,7 +872,7 @@
 		foreach m in mean_rgi50 median_rgi50 mean_llm50 median_llm50 {
 		
 			gen improv_`m'_evt_temp = improv_`m' if ym_rel == 0
-			egen improv_`m'_evt = max(improv_`m'_evt_temp), by(unique_id)
+			egen improv_`m'_evt = max(improv_`m'_evt_temp), by(event_id)
 			drop improv_`m'_evt_temp
 		
 		}
@@ -904,11 +925,11 @@
 	
 	clear
 	
-	foreach var in mean_rgi50 median_rgi50 mean_llm50 median_llm50 {
+	foreach m in mean_rgi50 median_rgi50 mean_llm50 median_llm50 {
 			
 	coefplot (main_improvyes_`m', recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
 		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-		 (ctrl_improyes_`m', recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
+		 (ctrl_improvyes_`m', recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
 		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
 		 , ///
 		 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
@@ -938,7 +959,7 @@
 		
 	coefplot (num_improvyes_`m', recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
 		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-		 (nct_improyes_`m', recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
+		 (nct_improvyes_`m', recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
 		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
 		 , ///
 		 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
@@ -947,7 +968,7 @@
 		 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
 		 xtitle("Months relative to poaching event") ///
 		 ytitle("Share of new hires" "from the same firm as poached worker") ///
-		 ylabel(-.02(.02).08) name(spv, replace)
+		 name(spv, replace)
 		 
 		 graph export "${results}/pred2_numyes_`m'.pdf", as(pdf) replace
 		 
@@ -962,7 +983,7 @@
 		 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
 		 xtitle("Months relative to poaching event") ///
 		 ytitle("Share of new hires" "from the same firm as poached worker") ///
-		 ylabel(-.02(.02).08) name(spv, replace)
+		 name(spv, replace)
 		 
 		 graph export "${results}/pred2_numno_`m'.pdf", as(pdf) replace
 		 
