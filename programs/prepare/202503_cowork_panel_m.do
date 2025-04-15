@@ -217,22 +217,11 @@
 		rename pc_cpf cpf
 		
 		save "${temp}/202503_pc_ind", replace
-		
-*/
 	
 // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
 
 	// this panel will be constructed separately for each cohort
-	*foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { // COMPLETE LIST
-	*forvalues ym=620/620 {								 // O QUE JÁ RODOU	
-	*foreach ym of numlist 601/611 { 						 // LOOP 1
-	*foreach ym of numlist 613/619 621/623 { 					 // LOOP 2
-	*foreach ym of numlist 625/635 { 						 // LOOP 3
-	*foreach ym of numlist 637/647 { 						 // LOOP 4
-	*foreach ym of numlist 649/659 { 						 // LOOP 5
-	*foreach ym of numlist 661/671 { 						 // LOOP 6
-	*foreach ym of numlist 673/683 { 						 // LOOP 7
-	
+	foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {
 	
 	use "${temp}/202503_o_cw_`ym'_complete", clear
 	
@@ -395,24 +384,75 @@
 	} 	
 	
 	
+*/	
+	
+			// CONTINUAR RODANDO A PARTIR DAQUI
+	
+// PART V: ADDING FIXED EFFECTS
+
+	// this panel will be constructed separately for each cohort
+	*foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { // ALL EVENTS
+	*foreach ym of numlist 601/611 	{ // LOOP 1
+	*foreach ym of numlist 613/623  { // LOOP 2
+	*foreach ym of numlist 625/635  { // LOOP 3
+	*foreach ym of numlist 637/647  { // LOOP 4
+	*foreach ym of numlist 649/659  { // LOOP 5
+	*foreach ym of numlist 661/671  { // LOOP 6
+	*foreach ym of numlist 673/683  { // LOOP 7
+	
+	use "${temp}/202503_o_cw_`ym'_complete", clear
+	
+		// worker FE
+		merge m:1 cpf using "${AKM}/AKM_2003_2008_both_workerFE", keep(master match) nogen
+		rename naive_FE_worker worker_naive_fe
+		rename akm_FE_worker worker_akm_fe
+		
+		// firm FE
+		tostring plant_id, generate(plant_id_str) format(%014.0f)
+		gen firm_id = substr(plant_id_str, 1, 8)
+		destring firm_id, replace force
+		merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE", keep(master match) nogen
+		rename naive_FE_firm firm_naive_fe
+		rename akm_FE_firm firm_akm_fe
+		drop plant_id_str firm_id
+		
+		// origin firm FE
+		tostring o_plant, generate(o_plant_str) format(%014.0f)
+		gen firm_id = substr(o_plant_str, 1, 8)
+		destring firm_id, replace force
+		merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE", keep(master match) nogen
+		rename naive_FE_firm o_firm_naive_fe
+		rename akm_FE_firm o_firm_akm_fe
+		drop o_plant_str firm_id
+		
+		// destination firm FE
+		tostring d_plant, generate(d_plant_str) format(%014.0f)
+		gen firm_id = substr(d_plant_str, 1, 8)
+		destring firm_id, replace force
+		merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE", keep(master match) nogen
+		rename naive_FE_firm d_firm_naive_fe
+		rename akm_FE_firm d_firm_akm_fe
+		drop d_plant_str firm_id
+	
+	// saving
+	compress
+	save "${temp}/202503_o_cw_`ym'_complete", replace
+	
+					timer off 1
+					
+					timer list
+					
+	}	
 	
 	/*
-				
-	// adding worker FEs --- CHECK WITH FELIIPE WHICH DATA SETS I SHOULD USE!
-
-		
-			// worker FEs (from "low-tech" AKM model)
-			merge m:1 cpf using "${AKM}/AKM_2003_2008_Worker", keep(master match) nogen
-		
 	
+	
+// PART V: ADDING VARIABLES INDICATING TENURE OVERLAP OF WORKER WITH POACHED INDIVIDUAL
 
-
-// including variable that indicates tenure overlap of worker with pc individual
-
-	foreach e in spv emp dir { // dir5
-	forvalues ym=528/683 {
+	// this panel will be constructed separately for each cohort
+	foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {
 		
-	use "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", clear	
+	use "${temp}/202503_o_cw_`ym'_complete", clear	
 		
 		if _N > 0 {
 

@@ -387,9 +387,6 @@ forvalues ym = 528/683 {
 		
 		if _N > 0 {
 			
-			// dropping the variables which will be recreated now ----- THIS IS TEMPORARY
-			drop tenure_ym n_pc tenure_ym_pc tenure_overlap_ym tenure_overlap
-
 		// construct variables that indicate tenure overlap
 		// tenure in RAIS is reported in december or last month of person in the firm
 		// let us compute a "running" tenure instead

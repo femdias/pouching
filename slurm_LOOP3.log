@@ -369,1067 +369,759 @@ Notes:
 >                 rename pc_cpf cpf
 >                 
 >                 save "${temp}/202503_pc_ind", replace
+>         
+> // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
+> 
+>         // this panel will be constructed separately for each cohort
+>         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
+>  673/683 {
+>         
+>         use "${temp}/202503_o_cw_`ym'_complete", clear
+>         
+>         // event-level information
+>         merge m:1 eventid using "${temp}/202503_evt_vars"
+>         drop if _merge == 2
+>         drop _merge
 >                 
-> */
-.         
-. // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
-. 
-.         // this panel will be constructed separately for each cohort
-.         *foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/67
-> 1 673/683 { // COMPLETE LIST
-.         *forvalues ym=620/620 {                                              
->             // O QUE JÁ RODOU     
-.         *foreach ym of numlist 601/611 {                                     
->             // LOOP 1
-.         *foreach ym of numlist 613/619 621/623 {                             
->             // LOOP 2
-.         foreach ym of numlist 625/635 {                                      
->             // LOOP 3
-  2.         *foreach ym of numlist 637/647 {                                  
->                // LOOP 4
-.         *foreach ym of numlist 649/659 {                                     
->             // LOOP 5
-.         *foreach ym of numlist 661/671 {                                     
->             // LOOP 6
-.         *foreach ym of numlist 673/683 {                                     
->             // LOOP 7
-.         
-.         use "${temp}/202503_o_cw_`ym'_complete", clear
-  3.         
-.         // event-level information
-.         merge m:1 eventid using "${temp}/202503_evt_vars"
-  4.         drop if _merge == 2
-  5.         drop _merge
-  6.                 
-.         // wages variables
-.                 
-.                 // adjusting wages ---- THIS IS ALSO TEMPORARY --- WILL EVENT
+>         // wages variables
+>                 
+>                 // adjusting wages ---- THIS IS ALSO TEMPORARY --- WILL EVENT
 > UALLY BE DONE WHEN CONSTRUCTING THE MONTHLY DS
-.                 
-.                 gen year = year(dofm(ym))
-  7.                 merge m:1 year using "${input}/auxiliary/ipca_brazil"
-  8.                 generate index_2017 = index if year == 2017
-  9.                 egen index_base = max(index_2017)
- 10.                 generate adj_index = index / index_base
- 11.                 drop if _merge == 2
- 12.                                 
-.                         // in level
-.                         generate wage_real = earn_avg_month_nom / adj_index
- 13.                 
-.                         // in logs
-.                         gen wage_real_ln = ln(wage_real)
- 14.                         
-.                 drop year index _merge index_2017 index_base adj_index
- 15.                 
-.                 // other wage variables
-.                 
-.                 // wage in t=-12, level
-.                 
-.                 gen wage_real_l12_temp = wage_real if ym_rel == -12
- 16.                 egen wage_real_l12 = max(wage_real_l12_temp), by(cpf)
- 17.                 
-.                 drop wage_real_l12_temp
- 18.                 
-.                 // wage in t=-12, log
-.                 
-.                 gen wage_real_ln_l12_temp = wage_real_ln if ym_rel == -12
- 19.                 egen wage_real_ln_l12 = max(wage_real_ln_l12_temp), by(cpf
-> )
- 20.                 
-.                 drop wage_real_ln_l12_temp
- 21.                         
-.                 // wage in t=0, level
-.                 
-.                 gen wage_real_0_temp = wage_real if ym_rel == 0
- 22.                 egen wage_real_0 = max(wage_real_0_temp), by(cpf)
- 23.                 
-.                 drop wage_real_0_temp
- 24.                 
-.                 // wage in t=0, log
-.                 
-.                 gen wage_real_ln_0_temp = wage_real_ln if ym_rel == 0
- 25.                 egen wage_real_ln_0 = max(wage_real_ln_0_temp), by(cpf)
- 26.                 
-.                 drop wage_real_ln_0_temp                
- 27.                                 
-.         // identifying the poached individuals among the coworkers
-.         
-.         merge m:1 eventid cpf using "${temp}/202503_pc_ind"
- 28.         drop if _merge == 2
- 29.         drop _merge
- 30.         
-.                 // organzing the newly added variables
-.                 replace pc_dir = 0 if pc_dir == .
- 31.                 replace pc_spv = 0 if pc_spv == .
- 32.                 replace pc_emp = 0 if pc_emp == .
- 33.                 replace pc_d_dir = 0 if pc_d_dir == .
- 34.                 replace pc_d_spv = 0 if pc_d_spv == .
- 35.                 replace pc_d_emp = 0 if pc_d_emp == .
- 36.                 
-.                 // unique variable identifying the poached individuals
-.                 gen pc_individual = (pc_dir == 1 | pc_spv == 1 | pc_emp == 1)
- 37.                 
-.         // identify the raided individuals among the coworkers  
-.         
-.                 // set hiring year-month
-.                 gen hire_ym = ym(year(hire_date), month(hire_date))
- 38.                 format hire_ym %tm
- 39.                                 
-.                         // identify raiding events
-.                         
-.                         gen raid = ((ym == hire_ym) & (hire_ym != .)) /// hir
+>                 
+>                 gen year = year(dofm(ym))
+>                 merge m:1 year using "${input}/auxiliary/ipca_brazil"
+>                 generate index_2017 = index if year == 2017
+>                 egen index_base = max(index_2017)
+>                 generate adj_index = index / index_base
+>                 drop if _merge == 2
+>                                 
+>                         // in level
+>                         generate wage_real = earn_avg_month_nom / adj_index
+>                 
+>                         // in logs
+>                         gen wage_real_ln = ln(wage_real)
+>                         
+>                 drop year index _merge index_2017 index_base adj_index
+>                 
+>                 // other wage variables
+>                 
+>                 // wage in t=-12, level
+>                 
+>                 gen wage_real_l12_temp = wage_real if ym_rel == -12
+>                 egen wage_real_l12 = max(wage_real_l12_temp), by(cpf)
+>                 
+>                 drop wage_real_l12_temp
+>                 
+>                 // wage in t=-12, log
+>                 
+>                 gen wage_real_ln_l12_temp = wage_real_ln if ym_rel == -12
+>                 egen wage_real_ln_l12 = max(wage_real_ln_l12_temp), by(cpf)
+>                 
+>                 drop wage_real_ln_l12_temp
+>                         
+>                 // wage in t=0, level
+>                 
+>                 gen wage_real_0_temp = wage_real if ym_rel == 0
+>                 egen wage_real_0 = max(wage_real_0_temp), by(cpf)
+>                 
+>                 drop wage_real_0_temp
+>                 
+>                 // wage in t=0, log
+>                 
+>                 gen wage_real_ln_0_temp = wage_real_ln if ym_rel == 0
+>                 egen wage_real_ln_0 = max(wage_real_ln_0_temp), by(cpf)
+>                 
+>                 drop wage_real_ln_0_temp                
+>                                 
+>         // identifying the poached individuals among the coworkers
+>         
+>         merge m:1 eventid cpf using "${temp}/202503_pc_ind"
+>         drop if _merge == 2
+>         drop _merge
+>         
+>                 // organzing the newly added variables
+>                 replace pc_dir = 0 if pc_dir == .
+>                 replace pc_spv = 0 if pc_spv == .
+>                 replace pc_emp = 0 if pc_emp == .
+>                 replace pc_d_dir = 0 if pc_d_dir == .
+>                 replace pc_d_spv = 0 if pc_d_spv == .
+>                 replace pc_d_emp = 0 if pc_d_emp == .
+>                 
+>                 // unique variable identifying the poached individuals
+>                 gen pc_individual = (pc_dir == 1 | pc_spv == 1 | pc_emp == 1)
+>                 
+>         // identify the raided individuals among the coworkers  
+>         
+>                 // set hiring year-month
+>                 gen hire_ym = ym(year(hire_date), month(hire_date))
+>                 format hire_ym %tm
+>                                 
+>                         // identify raiding events
+>                         
+>                         gen raid = ((ym == hire_ym) & (hire_ym != .)) /// hir
 > ed in the month
 >                                    & (plant_id == d_plant) /// moving to dest
 > ination plant
 >                                    & (pc_individual == 0) // not a poached in
 > dividual 
- 40.                                  
-.                                 // let's identify who was raided more than on
+>                                  
+>                                 // let's identify who was raided more than on
 > ce
-.                                 egen raid_n = sum(raid), by(cpf)
- 41.                                 gen raid_multiple = (raid_n > 1)
- 42.                                 drop raid_n
- 43.                                  
-.                                 // if an individual is raided more than once,
+>                                 egen raid_n = sum(raid), by(cpf)
+>                                 gen raid_multiple = (raid_n > 1)
+>                                 drop raid_n
+>                                  
+>                                 // if an individual is raided more than once,
 >  use only the first raiding
-.                                 gen ym_raid = ym if raid == 1
- 44.                                 egen ym_raid_min = min(ym_raid), by(cpf)
- 45.                                 replace raid = 0 if ym_raid != ym_raid_min
- 46.                                 drop ym_raid ym_raid_min
- 47.                                 
-.                         // raid types according to occupations
-.                         
-.                                 // spv in origin
-.                                 
-.                                 gen spv_l12_temp = spv if ym_rel == -12
- 48.                                 egen spv_l12 = max(spv_l12_temp), by(cpf)
- 49.                                 
-.                                 gen raid_spv_temp = (raid == 1 & spv_l12 == 1
+>                                 gen ym_raid = ym if raid == 1
+>                                 egen ym_raid_min = min(ym_raid), by(cpf)
+>                                 replace raid = 0 if ym_raid != ym_raid_min
+>                                 drop ym_raid ym_raid_min
+>                                 
+>                         // raid types according to occupations
+>                         
+>                                 // spv in origin
+>                                 
+>                                 gen spv_l12_temp = spv if ym_rel == -12
+>                                 egen spv_l12 = max(spv_l12_temp), by(cpf)
+>                                 
+>                                 gen raid_spv_temp = (raid == 1 & spv_l12 == 1
 > )
- 50.                                 egen raid_spv = max(raid_spv_temp), by(cpf
+>                                 egen raid_spv = max(raid_spv_temp), by(cpf)
+>                                 
+>                                 drop spv_l12_temp raid_spv_temp
+>                                 
+>                                 // dir in origin
+>                                 
+>                                 gen dir_l12_temp = dir if ym_rel == -12
+>                                 egen dir_l12 = max(dir_l12_temp), by(cpf)
+>                                 
+>                                 gen raid_dir_temp = (raid == 1 & dir_l12 == 1
 > )
- 51.                                 
-.                                 drop spv_l12_temp raid_spv_temp
- 52.                                 
-.                                 // dir in origin
-.                                 
-.                                 gen dir_l12_temp = dir if ym_rel == -12
- 53.                                 egen dir_l12 = max(dir_l12_temp), by(cpf)
- 54.                                 
-.                                 gen raid_dir_temp = (raid == 1 & dir_l12 == 1
-> )
- 55.                                 egen raid_dir = max(raid_dir_temp), by(cpf
-> )
- 56.                                 
-.                                 drop dir_l12_temp raid_dir_temp
- 57.                                 
-.                                 // emp in origin
-.                                 
-.                                 gen emp = (dir == 0 & spv == 0) // THIS SHOUL
+>                                 egen raid_dir = max(raid_dir_temp), by(cpf)
+>                                 
+>                                 drop dir_l12_temp raid_dir_temp
+>                                 
+>                                 // emp in origin
+>                                 
+>                                 gen emp = (dir == 0 & spv == 0) // THIS SHOUL
 > D BE CREATED WAY BEFORE!!!!!!!
- 58.                                 
-.                                 gen emp_l12_temp = emp if ym_rel == -12
- 59.                                 egen emp_l12 = max(emp_l12_temp), by(cpf)
- 60.                                 
-.                                 gen raid_emp_temp = (raid == 1 & emp_l12 == 1
+>                                 
+>                                 gen emp_l12_temp = emp if ym_rel == -12
+>                                 egen emp_l12 = max(emp_l12_temp), by(cpf)
+>                                 
+>                                 gen raid_emp_temp = (raid == 1 & emp_l12 == 1
 > )
- 61.                                 egen raid_emp = max(raid_emp_temp), by(cpf
-> )
- 62.                                 
-.                                 drop emp_l12_temp raid_emp_temp
- 63.                                 
-.                                 // spv in destination
-.                                 
-.                                 gen raid_d_spv_temp = (raid == 1 & spv == 1)
- 64.                                 egen raid_d_spv = max(raid_d_spv_temp), by
-> (cpf)
- 65.                                 
-.                                 drop raid_d_spv_temp
- 66.                                 
-.                                 // dir in destination
-.                                 
-.                                 gen raid_d_dir_temp = (raid == 1 & dir == 1)
- 67.                                 egen raid_d_dir = max(raid_d_dir_temp), by
-> (cpf)
- 68.                                 
-.                                 drop raid_d_dir_temp
- 69.                                 
-.                                 // emp in destination
-.                                 
-.                                 gen raid_d_emp_temp = (raid == 1 & emp == 1)
- 70.                                 egen raid_d_emp = max(raid_d_emp_temp), by
-> (cpf)
- 71.                                 
-.                                 drop raid_d_emp_temp
- 72.                                 
-.                         // identify raided individuals
-.                         egen raid_individual = max(raid), by(cpf)
- 73.                         
+>                                 egen raid_emp = max(raid_emp_temp), by(cpf)
+>                                 
+>                                 drop emp_l12_temp raid_emp_temp
+>                                 
+>                                 // spv in destination
+>                                 
+>                                 gen raid_d_spv_temp = (raid == 1 & spv == 1)
+>                                 egen raid_d_spv = max(raid_d_spv_temp), by(cp
+> f)
+>                                 
+>                                 drop raid_d_spv_temp
+>                                 
+>                                 // dir in destination
+>                                 
+>                                 gen raid_d_dir_temp = (raid == 1 & dir == 1)
+>                                 egen raid_d_dir = max(raid_d_dir_temp), by(cp
+> f)
+>                                 
+>                                 drop raid_d_dir_temp
+>                                 
+>                                 // emp in destination
+>                                 
+>                                 gen raid_d_emp_temp = (raid == 1 & emp == 1)
+>                                 egen raid_d_emp = max(raid_d_emp_temp), by(cp
+> f)
+>                                 
+>                                 drop raid_d_emp_temp
+>                                 
+>                         // identify raided individuals
+>                         egen raid_individual = max(raid), by(cpf)
+>                         
+>         // saving
+>         compress
+>         save "${temp}/202503_o_cw_`ym'_complete", replace
+>         
+>         }       
+>         
+>         
+> */      
+.         
+.                         // CONTINUAR RODANDO A PARTIR DAQUI
+.         
+. // PART V: ADDING FIXED EFFECTS
+. 
+.         // this panel will be constructed separately for each cohort
+.         *foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/67
+> 1 673/683 { // ALL EVENTS
+.         *foreach ym of numlist 601/611  { // LOOP 1
+.         *foreach ym of numlist 613/623  { // LOOP 2
+.         foreach ym of numlist 625/635  { // LOOP 3
+  2.         *foreach ym of numlist 637/647  { // LOOP 4
+.         *foreach ym of numlist 649/659  { // LOOP 5
+.         *foreach ym of numlist 661/671  { // LOOP 6
+.         *foreach ym of numlist 673/683  { // LOOP 7
+.         
+.         use "${temp}/202503_o_cw_`ym'_complete", clear
+  3.         
+.                 // worker FE
+.                 merge m:1 cpf using "${AKM}/AKM_2003_2008_both_workerFE", kee
+> p(master match) nogen
+  4.                 rename naive_FE_worker worker_naive_fe
+  5.                 rename akm_FE_worker worker_akm_fe
+  6.                 
+.                 // firm FE
+.                 tostring plant_id, generate(plant_id_str) format(%014.0f)
+  7.                 gen firm_id = substr(plant_id_str, 1, 8)
+  8.                 destring firm_id, replace force
+  9.                 merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE"
+> , keep(master match) nogen
+ 10.                 rename naive_FE_firm firm_naive_fe
+ 11.                 rename akm_FE_firm firm_akm_fe
+ 12.                 drop plant_id_str firm_id
+ 13.                 
+.                 // origin firm FE
+.                 tostring o_plant, generate(o_plant_str) format(%014.0f)
+ 14.                 gen firm_id = substr(o_plant_str, 1, 8)
+ 15.                 destring firm_id, replace force
+ 16.                 merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE"
+> , keep(master match) nogen
+ 17.                 rename naive_FE_firm o_firm_naive_fe
+ 18.                 rename akm_FE_firm o_firm_akm_fe
+ 19.                 drop o_plant_str firm_id
+ 20.                 
+.                 // destination firm FE
+.                 tostring d_plant, generate(d_plant_str) format(%014.0f)
+ 21.                 gen firm_id = substr(d_plant_str, 1, 8)
+ 22.                 destring firm_id, replace force
+ 23.                 merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE"
+> , keep(master match) nogen
+ 24.                 rename naive_FE_firm d_firm_naive_fe
+ 25.                 rename akm_FE_firm d_firm_akm_fe
+ 26.                 drop d_plant_str firm_id
+ 27.         
 .         // saving
 .         compress
- 74.         save "${temp}/202503_o_cw_`ym'_complete", replace
- 75.         
+ 28.         save "${temp}/202503_o_cw_`ym'_complete", replace
+ 29.         
+.                                         timer off 1
+ 30.                                         
+.                                         timer list
+ 31.                                         
 .         }       
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       373,807
-        from master                         0  (_merge==1)
-        from using                    373,807  (_merge==2)
+    Not matched                    15,802,325
+        from master                15,802,325  
+        from using                          0  
 
-    Matched                        59,619,500  (_merge==3)
+    Matched                        43,817,175  
     -----------------------------------------
-(373,807 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        59,619,500  (_merge==3)
-    -----------------------------------------
-(59,619,522 missing values generated)
-(23 observations deleted)
-(10,451,431 missing values generated)
-(10,451,431 missing values generated)
-(57,234,720 missing values generated)
-(57,234,720 missing values generated)
-(57,706,315 missing values generated)
-(11,789,875 missing values generated)
-(57,706,315 missing values generated)
-(11,789,875 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(10451431 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    59,936,380
-        from master                59,485,700  (_merge==1)
-        from using                    450,680  (_merge==2)
+    Not matched                    13,063,232
+        from master                13,063,232  
+        from using                          0  
 
-    Matched                           133,800  (_merge==3)
+    Matched                        46,556,268  
     -----------------------------------------
-(450,680 observations deleted)
-(59,485,700 real changes made)
-(59,485,700 real changes made)
-(59,485,700 real changes made)
-(59,485,700 real changes made)
-(59,485,700 real changes made)
-(59,485,700 real changes made)
-(10,451,431 missing values generated)
-(59,603,919 missing values generated)
-(59,241,100 missing values generated)
-(445 real changes made)
-(57,234,720 missing values generated)
-(57,234,720 missing values generated)
-(57,234,720 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (3,875,267,500 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,359,150
+        from master                 1,359,150  
+        from using                          0  
+
+    Matched                        58,260,350  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     3,211,625
+        from master                 3,211,625  
+        from using                          0  
+
+    Matched                        56,407,875  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_625_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       372,756
-        from master                         0  (_merge==1)
-        from using                    372,756  (_merge==2)
+    Not matched                    17,987,300
+        from master                17,987,300  
+        from using                          0  
 
-    Matched                        67,746,650  (_merge==3)
+    Matched                        49,759,350  
     -----------------------------------------
-(372,756 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        67,746,650  (_merge==3)
-    -----------------------------------------
-(67,746,672 missing values generated)
-(23 observations deleted)
-(11,654,140 missing values generated)
-(11,654,140 missing values generated)
-(65,036,784 missing values generated)
-(65,036,784 missing values generated)
-(65,567,407 missing values generated)
-(13,265,575 missing values generated)
-(65,567,407 missing values generated)
-(13,265,575 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(11654140 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    68,032,876
-        from master                67,583,375  (_merge==1)
-        from using                    449,501  (_merge==2)
+    Not matched                    14,758,807
+        from master                14,758,807  
+        from using                          0  
 
-    Matched                           163,275  (_merge==3)
+    Matched                        52,987,843  
     -----------------------------------------
-(449,501 observations deleted)
-(67,583,375 real changes made)
-(67,583,375 real changes made)
-(67,583,375 real changes made)
-(67,583,375 real changes made)
-(67,583,375 real changes made)
-(67,583,375 real changes made)
-(11,654,140 missing values generated)
-(67,728,162 missing values generated)
-(67,299,850 missing values generated)
-(616 real changes made)
-(65,036,784 missing values generated)
-(65,036,784 missing values generated)
-(65,036,784 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,403,532,250 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,800,925
+        from master                 1,800,925  
+        from using                          0  
+
+    Matched                        65,945,725  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     4,392,625
+        from master                 4,392,625  
+        from using                          0  
+
+    Matched                        63,354,025  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_626_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       372,877
-        from master                         0  (_merge==1)
-        from using                    372,877  (_merge==2)
+    Not matched                    19,206,700
+        from master                19,206,700  
+        from using                          0  
 
-    Matched                        70,172,050  (_merge==3)
+    Matched                        50,965,350  
     -----------------------------------------
-(372,877 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        70,172,050  (_merge==3)
-    -----------------------------------------
-(70,172,072 missing values generated)
-(23 observations deleted)
-(12,297,646 missing values generated)
-(12,297,646 missing values generated)
-(67,365,168 missing values generated)
-(67,365,168 missing values generated)
-(67,913,226 missing values generated)
-(13,701,450 missing values generated)
-(67,913,226 missing values generated)
-(13,701,450 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(12297646 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    70,458,900
-        from master                70,009,375  (_merge==1)
-        from using                    449,525  (_merge==2)
+    Not matched                    15,773,342
+        from master                15,773,342  
+        from using                          0  
 
-    Matched                           162,675  (_merge==3)
+    Matched                        54,398,708  
     -----------------------------------------
-(449,525 observations deleted)
-(70,009,375 real changes made)
-(70,009,375 real changes made)
-(70,009,375 real changes made)
-(70,009,375 real changes made)
-(70,009,375 real changes made)
-(70,009,375 real changes made)
-(12,297,646 missing values generated)
-(70,151,335 missing values generated)
-(69,674,950 missing values generated)
-(831 real changes made)
-(67,365,168 missing values generated)
-(67,365,168 missing values generated)
-(67,365,168 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,561,183,250 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     2,064,125
+        from master                 2,064,125  
+        from using                          0  
+
+    Matched                        68,107,925  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     4,155,375
+        from master                 4,155,375  
+        from using                          0  
+
+    Matched                        66,016,675  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_627_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       372,780
-        from master                         0  (_merge==1)
-        from using                    372,780  (_merge==2)
+    Not matched                    19,689,975
+        from master                19,689,975  
+        from using                          0  
 
-    Matched                        71,002,375  (_merge==3)
+    Matched                        51,312,400  
     -----------------------------------------
-(372,780 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        71,002,375  (_merge==3)
-    -----------------------------------------
-(71,002,397 missing values generated)
-(23 observations deleted)
-(12,354,042 missing values generated)
-(12,354,042 missing values generated)
-(68,162,280 missing values generated)
-(68,162,280 missing values generated)
-(68,708,928 missing values generated)
-(13,666,200 missing values generated)
-(68,708,928 missing values generated)
-(13,666,200 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(12354042 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    71,290,239
-        from master                70,840,675  (_merge==1)
-        from using                    449,564  (_merge==2)
+    Not matched                    15,588,532
+        from master                15,588,532  
+        from using                          0  
 
-    Matched                           161,700  (_merge==3)
+    Matched                        55,413,843  
     -----------------------------------------
-(449,564 observations deleted)
-(70,840,675 real changes made)
-(70,840,675 real changes made)
-(70,840,675 real changes made)
-(70,840,675 real changes made)
-(70,840,675 real changes made)
-(70,840,675 real changes made)
-(12,354,042 missing values generated)
-(70,983,842 missing values generated)
-(70,547,525 missing values generated)
-(339 real changes made)
-(68,162,280 missing values generated)
-(68,162,280 missing values generated)
-(68,162,280 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,615,154,375 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,835,825
+        from master                 1,835,825  
+        from using                          0  
+
+    Matched                        69,166,550  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     4,233,900
+        from master                 4,233,900  
+        from using                          0  
+
+    Matched                        66,768,475  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_628_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       373,255
-        from master                         0  (_merge==1)
-        from using                    373,255  (_merge==2)
+    Not matched                    19,269,125
+        from master                19,269,125  
+        from using                          0  
 
-    Matched                        67,797,150  (_merge==3)
+    Matched                        48,528,025  
     -----------------------------------------
-(373,255 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        67,797,150  (_merge==3)
-    -----------------------------------------
-(67,797,172 missing values generated)
-(23 observations deleted)
-(11,943,010 missing values generated)
-(11,943,010 missing values generated)
-(65,085,264 missing values generated)
-(65,085,264 missing values generated)
-(65,611,661 missing values generated)
-(13,159,925 missing values generated)
-(65,611,661 missing values generated)
-(13,159,925 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(11943010 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    68,098,014
-        from master                67,647,950  (_merge==1)
-        from using                    450,064  (_merge==2)
+    Not matched                    15,198,271
+        from master                15,198,271  
+        from using                          0  
 
-    Matched                           149,200  (_merge==3)
+    Matched                        52,598,879  
     -----------------------------------------
-(450,064 observations deleted)
-(67,647,950 real changes made)
-(67,647,950 real changes made)
-(67,647,950 real changes made)
-(67,647,950 real changes made)
-(67,647,950 real changes made)
-(67,647,950 real changes made)
-(11,943,010 missing values generated)
-(67,778,234 missing values generated)
-(67,341,100 missing values generated)
-(674 real changes made)
-(65,085,264 missing values generated)
-(65,085,264 missing values generated)
-(65,085,264 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,406,814,750 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,811,300
+        from master                 1,811,300  
+        from using                          0  
+
+    Matched                        65,985,850  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     4,719,825
+        from master                 4,719,825  
+        from using                          0  
+
+    Matched                        63,077,325  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_629_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       373,042
-        from master                         0  (_merge==1)
-        from using                    373,042  (_merge==2)
+    Not matched                    19,461,975
+        from master                19,461,975  
+        from using                          0  
 
-    Matched                        68,059,550  (_merge==3)
+    Matched                        48,597,575  
     -----------------------------------------
-(373,042 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        68,059,550  (_merge==3)
-    -----------------------------------------
-(68,059,572 missing values generated)
-(23 observations deleted)
-(12,052,743 missing values generated)
-(12,052,743 missing values generated)
-(65,337,168 missing values generated)
-(65,337,168 missing values generated)
-(65,860,994 missing values generated)
-(13,095,650 missing values generated)
-(65,860,994 missing values generated)
-(13,095,650 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(12052743 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    68,347,466
-        from master                67,897,900  (_merge==1)
-        from using                    449,566  (_merge==2)
+    Not matched                    15,307,496
+        from master                15,307,496  
+        from using                          0  
 
-    Matched                           161,650  (_merge==3)
+    Matched                        52,752,054  
     -----------------------------------------
-(449,566 observations deleted)
-(67,897,900 real changes made)
-(67,897,900 real changes made)
-(67,897,900 real changes made)
-(67,897,900 real changes made)
-(67,897,900 real changes made)
-(67,897,900 real changes made)
-(12,052,743 missing values generated)
-(68,039,600 missing values generated)
-(67,575,825 missing values generated)
-(601 real changes made)
-(65,337,168 missing values generated)
-(65,337,168 missing values generated)
-(65,337,168 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,423,870,750 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,805,475
+        from master                 1,805,475  
+        from using                          0  
+
+    Matched                        66,254,075  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     5,025,000
+        from master                 5,025,000  
+        from using                          0  
+
+    Matched                        63,034,550  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_630_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       372,629
-        from master                         0  (_merge==1)
-        from using                    372,629  (_merge==2)
+    Not matched                    20,878,975
+        from master                20,878,975  
+        from using                          0  
 
-    Matched                        71,804,300  (_merge==3)
+    Matched                        50,925,325  
     -----------------------------------------
-(372,629 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        71,804,300  (_merge==3)
-    -----------------------------------------
-(71,804,322 missing values generated)
-(23 observations deleted)
-(12,920,449 missing values generated)
-(12,920,449 missing values generated)
-(68,932,128 missing values generated)
-(68,932,128 missing values generated)
-(69,493,112 missing values generated)
-(14,024,600 missing values generated)
-(69,493,112 missing values generated)
-(14,024,600 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(12920449 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    72,084,234
-        from master                71,634,975  (_merge==1)
-        from using                    449,259  (_merge==2)
+    Not matched                    16,440,027
+        from master                16,440,027  
+        from using                          0  
 
-    Matched                           169,325  (_merge==3)
+    Matched                        55,364,273  
     -----------------------------------------
-(449,259 observations deleted)
-(71,634,975 real changes made)
-(71,634,975 real changes made)
-(71,634,975 real changes made)
-(71,634,975 real changes made)
-(71,634,975 real changes made)
-(71,634,975 real changes made)
-(12,920,449 missing values generated)
-(71,786,274 missing values generated)
-(71,366,600 missing values generated)
-(518 real changes made)
-(68,932,128 missing values generated)
-(68,932,128 missing values generated)
-(68,932,128 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,667,279,500 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     2,123,000
+        from master                 2,123,000  
+        from using                          0  
+
+    Matched                        69,681,300  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     5,647,100
+        from master                 5,647,100  
+        from using                          0  
+
+    Matched                        66,157,200  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_631_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       373,359
-        from master                         0  (_merge==1)
-        from using                    373,359  (_merge==2)
+    Not matched                    20,314,900
+        from master                20,314,900  
+        from using                          0  
 
-    Matched                        67,528,125  (_merge==3)
+    Matched                        47,213,225  
     -----------------------------------------
-(373,359 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        67,528,125  (_merge==3)
-    -----------------------------------------
-(67,528,147 missing values generated)
-(23 observations deleted)
-(12,361,081 missing values generated)
-(12,361,081 missing values generated)
-(64,827,000 missing values generated)
-(64,827,000 missing values generated)
-(65,360,239 missing values generated)
-(13,330,975 missing values generated)
-(65,360,239 missing values generated)
-(13,330,975 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(12361081 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    67,826,285
-        from master                67,376,325  (_merge==1)
-        from using                    449,960  (_merge==2)
+    Not matched                    15,991,214
+        from master                15,991,214  
+        from using                          0  
 
-    Matched                           151,800  (_merge==3)
+    Matched                        51,536,911  
     -----------------------------------------
-(449,960 observations deleted)
-(67,376,325 real changes made)
-(67,376,325 real changes made)
-(67,376,325 real changes made)
-(67,376,325 real changes made)
-(67,376,325 real changes made)
-(67,376,325 real changes made)
-(12,361,081 missing values generated)
-(67,509,908 missing values generated)
-(67,082,450 missing values generated)
-(390 real changes made)
-(64,827,000 missing values generated)
-(64,827,000 missing values generated)
-(64,827,000 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,389,328,125 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     2,527,025
+        from master                 2,527,025  
+        from using                          0  
+
+    Matched                        65,001,100  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     4,828,225
+        from master                 4,828,225  
+        from using                          0  
+
+    Matched                        62,699,900  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_632_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       372,946
-        from master                         0  (_merge==1)
-        from using                    372,946  (_merge==2)
+    Not matched                    21,058,900
+        from master                21,058,900  
+        from using                          0  
 
-    Matched                        71,184,650  (_merge==3)
+    Matched                        50,125,750  
     -----------------------------------------
-(372,946 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        71,184,650  (_merge==3)
-    -----------------------------------------
-(71,184,672 missing values generated)
-(23 observations deleted)
-(12,843,198 missing values generated)
-(12,843,198 missing values generated)
-(68,337,264 missing values generated)
-(68,337,264 missing values generated)
-(68,891,259 missing values generated)
-(13,849,875 missing values generated)
-(68,891,259 missing values generated)
-(13,849,875 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(12843198 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    71,473,762
-        from master                71,024,150  (_merge==1)
-        from using                    449,612  (_merge==2)
+    Not matched                    16,585,300
+        from master                16,585,300  
+        from using                          0  
 
-    Matched                           160,500  (_merge==3)
+    Matched                        54,599,350  
     -----------------------------------------
-(449,612 observations deleted)
-(71,024,150 real changes made)
-(71,024,150 real changes made)
-(71,024,150 real changes made)
-(71,024,150 real changes made)
-(71,024,150 real changes made)
-(71,024,150 real changes made)
-(12,843,198 missing values generated)
-(71,164,623 missing values generated)
-(70,703,975 missing values generated)
-(800 real changes made)
-(68,337,264 missing values generated)
-(68,337,264 missing values generated)
-(68,337,264 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,627,002,250 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     2,426,225
+        from master                 2,426,225  
+        from using                          0  
+
+    Matched                        68,758,425  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     4,828,775
+        from master                 4,828,775  
+        from using                          0  
+
+    Matched                        66,355,875  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_633_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       373,597
-        from master                         0  (_merge==1)
-        from using                    373,597  (_merge==2)
+    Not matched                    19,574,000
+        from master                19,574,000  
+        from using                          0  
 
-    Matched                        64,693,025  (_merge==3)
+    Matched                        45,119,025  
     -----------------------------------------
-(373,597 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        64,693,025  (_merge==3)
-    -----------------------------------------
-(64,693,047 missing values generated)
-(23 observations deleted)
-(11,686,573 missing values generated)
-(11,686,573 missing values generated)
-(62,105,304 missing values generated)
-(62,105,304 missing values generated)
-(62,605,980 missing values generated)
-(12,516,900 missing values generated)
-(62,605,980 missing values generated)
-(12,516,900 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(11686573 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    64,990,951
-        from master                64,541,000  (_merge==1)
-        from using                    449,951  (_merge==2)
+    Not matched                    15,142,522
+        from master                15,142,522  
+        from using                          0  
 
-    Matched                           152,025  (_merge==3)
+    Matched                        49,550,503  
     -----------------------------------------
-(449,951 observations deleted)
-(64,541,000 real changes made)
-(64,541,000 real changes made)
-(64,541,000 real changes made)
-(64,541,000 real changes made)
-(64,541,000 real changes made)
-(64,541,000 real changes made)
-(11,686,573 missing values generated)
-(64,676,559 missing values generated)
-(64,290,950 missing values generated)
-(383 real changes made)
-(62,105,304 missing values generated)
-(62,105,304 missing values generated)
-(62,105,304 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (4,205,046,625 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     2,150,475
+        from master                 2,150,475  
+        from using                          0  
+
+    Matched                        62,542,550  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     5,694,075
+        from master                 5,694,075  
+        from using                          0  
+
+    Matched                        58,998,950  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_634_complete.dta saved
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       374,877
-        from master                         0  (_merge==1)
-        from using                    374,877  (_merge==2)
+    Not matched                    15,590,250
+        from master                15,590,250  
+        from using                          0  
 
-    Matched                        53,162,975  (_merge==3)
+    Matched                        37,572,725  
     -----------------------------------------
-(374,877 observations deleted)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                            23
-        from master                         0  (_merge==1)
-        from using                         23  (_merge==2)
-
-    Matched                        53,162,975  (_merge==3)
-    -----------------------------------------
-(53,162,997 missing values generated)
-(23 observations deleted)
-(9,307,931 missing values generated)
-(9,307,931 missing values generated)
-(51,036,456 missing values generated)
-(51,036,456 missing values generated)
-(51,443,871 missing values generated)
-(10,185,375 missing values generated)
-(51,443,871 missing values generated)
-(10,185,375 missing values generated)
+plant_id_str generated as str14
+firm_id: all characters numeric; replaced as long
+(9307931 missing values generated)
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                    53,510,509
-        from master                53,058,650  (_merge==1)
-        from using                    451,859  (_merge==2)
+    Not matched                    12,068,507
+        from master                12,068,507  
+        from using                          0  
 
-    Matched                           104,325  (_merge==3)
+    Matched                        41,094,468  
     -----------------------------------------
-(451,859 observations deleted)
-(53,058,650 real changes made)
-(53,058,650 real changes made)
-(53,058,650 real changes made)
-(53,058,650 real changes made)
-(53,058,650 real changes made)
-(53,058,650 real changes made)
-(9,307,931 missing values generated)
-(53,146,111 missing values generated)
-(52,761,450 missing values generated)
-(803 real changes made)
-(51,036,456 missing values generated)
-(51,036,456 missing values generated)
-(51,036,456 missing values generated)
-  variable multiple was float now byte
-  variable pc_dir was float now byte
-  variable pc_spv was float now byte
-  variable pc_emp was float now byte
-  variable pc_d_dir was float now byte
-  variable pc_d_spv was float now byte
-  variable pc_d_emp was float now byte
-  variable pc_individual was float now byte
-  variable hire_ym was float now int
-  variable raid was float now byte
-  variable raid_multiple was float now byte
-  variable spv_l12 was float now byte
-  variable raid_spv was float now byte
-  variable dir_l12 was float now byte
-  variable raid_dir was float now byte
-  variable emp was float now byte
-  variable emp_l12 was float now byte
-  variable raid_emp was float now byte
-  variable raid_d_spv was float now byte
-  variable raid_d_dir was float now byte
-  variable raid_d_emp was float now byte
-  variable raid_individual was float now byte
-  (3,455,593,375 bytes saved)
+o_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,721,775
+        from master                 1,721,775  
+        from using                          0  
+
+    Matched                        51,441,200  
+    -----------------------------------------
+d_plant_str generated as str14
+firm_id: all characters numeric; replaced as long
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     5,034,975
+        from master                 5,034,975  
+        from using                          0  
+
+    Matched                        48,128,000  
+    -----------------------------------------
+  (0 bytes saved)
 file poaching/temp/202503_o_cw_635_complete.dta saved
 
 .         
-.         
-.         
 .         /*
->                                 
->         // adding worker FEs --- CHECK WITH FELIIPE WHICH DATA SETS I SHOULD 
-> USE!
-> 
->                 
->                         // worker FEs (from "low-tech" AKM model)
->                         merge m:1 cpf using "${AKM}/AKM_2003_2008_Worker", ke
-> ep(master match) nogen
->                 
 >         
+>         
+> // PART V: ADDING VARIABLES INDICATING TENURE OVERLAP OF WORKER WITH POACHED 
+> INDIVIDUAL
 > 
-> 
-> // including variable that indicates tenure overlap of worker with pc individ
-> ual
-> 
->         foreach e in spv emp dir { // dir5
->         forvalues ym=528/683 {
+>         // this panel will be constructed separately for each cohort
+>         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
+>  673/683 {
 >                 
->         use "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", clear 
+>         use "${temp}/202503_o_cw_`ym'_complete", clear  
 >                 
 >                 if _N > 0 {
 > 

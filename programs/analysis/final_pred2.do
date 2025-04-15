@@ -12,8 +12,6 @@
 
 /*
 
-/*
-
 // "spv --> spv" events
 		
 	use "${data}/evt_panel_m_spv", clear
@@ -508,6 +506,10 @@
 		drop d_emp_t0_temp
 		
 		// collapsing at the event level
+
+			// I still have to impose the period restriction
+			keep if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12)
+		
 		keep if ym_rel >= 0
 		collapse (sum) numraid numhire (mean) d_emp_t0, by(event_id)
 		drop event_id

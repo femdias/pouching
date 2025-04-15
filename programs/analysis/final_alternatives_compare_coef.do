@@ -174,53 +174,58 @@ eststo c6_epvs_6_alt: reg pc_wage_d d_size_w_ln d_growth_w c.rd_coworker_fe##c.l
 suest 	c5_spv_4_alt  c5_spv_5_alt  c6_spv_6_alt ///
 	c5_spvs_4_alt c5_spvs_5_alt c6_spvs_6_alt ///
 	c5_epvs_4_alt c5_espv_5_alt c6_epvs_6_alt, vce(robust)
-
-
-	
+  
+di "Testing coefficients! Interpretation: if p-value = 'Prob > chi2' < 0.05, then the diffrence between the coefficicents is singificant at 5% level"  
+  
 di "###================ Destination Firm Size (d_size_w_ln) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Destination Firm Size (d_size_w_ln), 1st column"
+* "Mgt-Mgt X Mgt-NonMgt, Destination Firm Size (d_size_w_ln), 1st column"
 test [c5_spv_4_alt_mean]d_size_w_ln = [c5_spvs_4_alt_mean]d_size_w_ln
 
-di "Mgt-Mgt X NonMgt-Mgt, Destination Firm Size (d_size_w_ln), 1st column" 
+  local p_val = r(p)
+  di"`p_val'"
+  
+  
+  
+* "Mgt-Mgt X NonMgt-Mgt, Destination Firm Size (d_size_w_ln), 1st column" 
 test [c5_spv_4_alt_mean]d_size_w_ln = [c5_epvs_4_alt_mean]d_size_w_ln
 
 
-di "Mgt-Mgt X Mgt-NonMgt, Destination Firm Size (d_size_w_ln), 2nd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Destination Firm Size (d_size_w_ln), 2nd column" 
 test [c5_spv_5_alt_mean]d_size_w_ln = [c5_spvs_5_alt_mean]d_size_w_ln
 
-di "Mgt-Mgt X NonMgt-Mgt, Destination Firm Size (d_size_w_ln), 2nd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Destination Firm Size (d_size_w_ln), 2nd column" 
 test [c5_spv_5_alt_mean]d_size_w_ln = [c5_espv_5_alt_mean]d_size_w_ln
 
 
-di "Mgt-Mgt X Mgt-NonMgt, Destination Firm Size (d_size_w_ln), 3rd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Destination Firm Size (d_size_w_ln), 3rd column" 
 test [c6_spv_6_alt_mean]d_size_w_ln = [c6_spvs_6_alt_mean]d_size_w_ln
 
-di "Mgt-Mgt X NonMgt-Mgt, Destination Firm Size (d_size_w_ln), 3rd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Destination Firm Size (d_size_w_ln), 3rd column" 
 test [c6_spv_6_alt_mean]d_size_w_ln = [c6_epvs_6_alt_mean]d_size_w_ln
 
 
 
 di "###================ Destination Firm Employment growth rate (d_growth_w) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Destination Firm Employment growth rate (d_growth_w), 1st column"
+* "Mgt-Mgt X Mgt-NonMgt, Destination Firm Employment growth rate (d_growth_w), 1st column"
 test [c5_spv_4_alt_mean]d_growth_w = [c5_spvs_4_alt_mean]d_growth_w
 
-di "Mgt-Mgt X NonMgt-Mgt, Destination Firm Employment growth rate (d_growth_w), 1st column" 
+* "Mgt-Mgt X NonMgt-Mgt, Destination Firm Employment growth rate (d_growth_w), 1st column" 
 test [c5_spv_4_alt_mean]d_growth_w = [c5_epvs_4_alt_mean]d_growth_w
 
 
-di "Mgt-Mgt X Mgt-NonMgt, Destination Firm Employment growth rate (d_growth_w), 2nd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Destination Firm Employment growth rate (d_growth_w), 2nd column" 
 test [c5_spv_5_alt_mean]d_growth_w = [c5_spvs_5_alt_mean]d_growth_w
 
-di "Mgt-Mgt X NonMgt-Mgt, Destination Firm Employment growth rate (d_growth_w), 2nd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Destination Firm Employment growth rate (d_growth_w), 2nd column" 
 test [c5_spv_5_alt_mean]d_growth_w = [c5_espv_5_alt_mean]d_growth_w
 
 
-di "Mgt-Mgt X Mgt-NonMgt, Destination Firm Employment growth rate (d_growth_w), 3rd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Destination Firm Employment growth rate (d_growth_w), 3rd column" 
 test [c6_spv_6_alt_mean]d_growth_w = [c6_spvs_6_alt_mean]d_growth_w
 
-di "Mgt-Mgt X NonMgt-Mgt, Destination Firm Employment growth rate (d_growth_w), 3rd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Destination Firm Employment growth rate (d_growth_w), 3rd column" 
 test [c6_spv_6_alt_mean]d_growth_w = [c6_epvs_6_alt_mean]d_growth_w
 
 
@@ -228,28 +233,28 @@ test [c6_spv_6_alt_mean]d_growth_w = [c6_epvs_6_alt_mean]d_growth_w
 
 di "###================ Origin Firm Size (o_size_w_ln) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Origin Firm Size (o_size_w_ln), 2nd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Origin Firm Size (o_size_w_ln), 2nd column" 
 test [c5_spv_5_alt_mean]o_size_w_ln = [c5_spvs_5_alt_mean]o_size_w_ln
 
-di "Mgt-Mgt X NonMgt-Mgt, Origin Firm Size (o_size_w_ln), 2nd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Origin Firm Size (o_size_w_ln), 2nd column" 
 test [c5_spv_5_alt_mean]o_size_w_ln = [c5_espv_5_alt_mean]o_size_w_ln
 
 
 di "###================ Origin Firm Avg worker ability (AKM FE) (o_avg_fe_worker) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Origin Firm Avg worker ability (AKM FE) (o_avg_fe_worker), 2nd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Origin Firm Avg worker ability (AKM FE) (o_avg_fe_worker), 2nd column" 
 test [c5_spv_5_alt_mean]o_avg_fe_worker = [c5_spvs_5_alt_mean]o_avg_fe_worker
 
-di "Mgt-Mgt X NonMgt-Mgt, Origin Firm Avg worker ability (AKM FE) (o_avg_fe_worker), 2nd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Origin Firm Avg worker ability (AKM FE) (o_avg_fe_worker), 2nd column" 
 test [c5_spv_5_alt_mean]o_avg_fe_worker = [c5_espv_5_alt_mean]o_avg_fe_worker
 
 
 di "###================ Origin Firm Size X Avg worker ability (c.o_size_w_ln#c.o_avg_fe_worker) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Origin Firm Size X Avg worker ability (c.o_size_w_ln#c.o_avg_fe_worker), 2nd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Origin Firm Size X Avg worker ability (c.o_size_w_ln#c.o_avg_fe_worker), 2nd column" 
 test [c5_spv_5_alt_mean]c.o_size_w_ln#c.o_avg_fe_worker  = [c5_spvs_5_alt_mean]c.o_size_w_ln#c.o_avg_fe_worker 
 
-di "Mgt-Mgt X NonMgt-Mgt, Origin Firm Size X Avg worker ability (c.o_size_w_ln#c.o_avg_fe_worker), 2nd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Origin Firm Size X Avg worker ability (c.o_size_w_ln#c.o_avg_fe_worker), 2nd column" 
 test [c5_spv_5_alt_mean]c.o_size_w_ln#c.o_avg_fe_worker  = [c5_espv_5_alt_mean]c.o_size_w_ln#c.o_avg_fe_worker 
 
 
@@ -258,24 +263,24 @@ test [c5_spv_5_alt_mean]c.o_size_w_ln#c.o_avg_fe_worker  = [c5_espv_5_alt_mean]c
 
 di "###================ Raided workers Avg ability (AKM FE) (lnraid) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability (AKM FE) (lnraid), 1st column"
+* "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability (AKM FE) (lnraid), 1st column"
 test [c5_spv_4_alt_mean]lnraid = [c5_spvs_4_alt_mean]lnraid
 
-di "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability (AKM FE) (lnraid), 1st column" 
+* "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability (AKM FE) (lnraid), 1st column" 
 test [c5_spv_4_alt_mean]lnraid = [c5_epvs_4_alt_mean]lnraid
 
 
-di "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability (AKM FE) (lnraid), 2nd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability (AKM FE) (lnraid), 2nd column" 
 test [c5_spv_5_alt_mean]lnraid = [c5_spvs_5_alt_mean]lnraid
 
-di "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability (AKM FE) (lnraid), 2nd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability (AKM FE) (lnraid), 2nd column" 
 test [c5_spv_5_alt_mean]lnraid = [c5_espv_5_alt_mean]lnraid
 
 
-di "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability (AKM FE) (lnraid), 3rd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability (AKM FE) (lnraid), 3rd column" 
 test [c6_spv_6_alt_mean]lnraid = [c6_spvs_6_alt_mean]lnraid
 
-di "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability (AKM FE) (lnraid), 3rd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability (AKM FE) (lnraid), 3rd column" 
 test [c6_spv_6_alt_mean]lnraid = [c6_epvs_6_alt_mean]lnraid
 
 
@@ -283,19 +288,19 @@ test [c6_spv_6_alt_mean]lnraid = [c6_epvs_6_alt_mean]lnraid
 
 di "###================ Raided workers Quantity raided workers (rd_coworker_fe) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Raided workers Quantity raided workers rd_coworker_fe), 3rd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Raided workers Quantity raided workers rd_coworker_fe), 3rd column" 
 test [c6_spv_6_alt_mean]rd_coworker_fe = [c6_spvs_6_alt_mean]rd_coworker_fe
 
-di "Mgt-Mgt X NonMgt-Mgt, Raided workers Quantity raided workers (rd_coworker_fe), 3rd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Raided workers Quantity raided workers (rd_coworker_fe), 3rd column" 
 test [c6_spv_6_alt_mean]rd_coworker_fe = [c6_epvs_6_alt_mean]rd_coworker_fe
 
 
 di "###================ Raided workers Avg ability X Quantity (c.rd_coworker_fe#c.lnraid) ================###"
 
-di "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability X Quantity (c.rd_coworker_fe#c.lnraid), 3rd column" 
+* "Mgt-Mgt X Mgt-NonMgt, Raided workers Avg ability X Quantity (c.rd_coworker_fe#c.lnraid), 3rd column" 
 test [c6_spv_6_alt_mean]c.rd_coworker_fe#c.lnraid = [c6_spvs_6_alt_mean]c.rd_coworker_fe#c.lnraid 
 
-di "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability X Quantity (c.rd_coworker_fe#c.lnraid), 3rd column" 
+* "Mgt-Mgt X NonMgt-Mgt, Raided workers Avg ability X Quantity (c.rd_coworker_fe#c.lnraid), 3rd column" 
 test [c6_spv_6_alt_mean]c.rd_coworker_fe#c.lnraid = [c6_epvs_6_alt_mean]c.rd_coworker_fe#c.lnraid 
 
 

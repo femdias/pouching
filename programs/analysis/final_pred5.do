@@ -231,6 +231,11 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 	
 	la var tenure_overlap_1y "Manager tenure overlap"
 	
+	// at least 1 raided worker
+
+	la var atleastraid "Dummy = 1 if at least of raided worker"
+	
+	
 	// baseline events (spv-spv, mostly)
 	
 	eststo c0_spv_5: reg pc_wage_d o_size_w_ln o_avg_fe_worker    ///
@@ -269,13 +274,25 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 			
 			estadd local pred "5"
 			estadd local events "All"
-			
+	
+	/*
 	eststo c6_spv_5: reg pc_wage_d  c.o_size_w_ln##c.tenure_overlap_ln   /// 
 			pc_wage_o_l1 $mgr $firm_d   if pc_ym >= ym(2010,1) & $spvcond ///
 			& rd_coworker_n>=1  & rd_coworker_fe_m==0,  rob
 			
 			estadd local events "All"		
+	*/		
+	
+	* Controlling for at least one raided worker dummy
+	eststo c6_spv_5: reg pc_wage_d   c.o_size_w_ln##c.o_avg_fe_worker    /// 
+			pc_wage_o_l1 $mgr $firm_d atleastraid ///
+			if pc_ym >= ym(2010,1) & $spvcond, rob
 			
+			estadd local events "All"			
+
+			
+	
+	
 	// quartiles of tenure overlap
 			
 			xtile tenure_xtile_spvspv = tenure_overlap  if e(sample) == 1, nq(4)
@@ -430,6 +447,26 @@ global spvcond "(spv==1 | (spv==2 & waged_svpemp==10) | (spv==3 & waged_empspv==
 		"\\ \textbf{Destination firm}  \\ Destination firm size (ln) = d_size_w_ln" "Destination firm growth = d_growth_w"  ///
 		, labels("\cmark" ""))	
 		
+	// v3: Extra columns controlling for dummy 
+	
+	
+	esttab c1_spv_5 c2_spv_5 c3_spv_5 c4_spv_5 c5_spv_5 c6_spv_5 using "${results}/pred5_v3.tex", booktabs  /// 
+		replace compress noconstant nomtitles nogap collabels(none) label /// 
+		refcat(o_size_w_ln "\midrule", nolabel) ///
+		mgroups("Outcome: Manager ln(salary) at destination",  ///
+		pattern(1 0 0 0 0 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
+		keep(o_size_w_ln o_avg_fe_worker c.o_size_w_ln#c.o_avg_fe_worker ) ///
+		cells(b(star fmt(3)) se(par fmt(3))) ///    
+		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
+		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
+		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
+		"Manager experience = pc_exp_ln" "Manager quality = pc_fe" ///
+		"\\ \textbf{Destination firm}  \\ Destination firm size (ln) = d_size_w_ln" "Destination firm growth = d_growth_w"  ///
+		"\\ \textbf{Event controls} \\ Indicator for at least one raided worker = atleastraid" ///
+		, labels("\cmark" ""))	
+	
+	
+	
 	// version with tenure overlap as an explanatory variable
 	
 	foreach var in overlap overlap_ln overlap_sum overlap_sum_ln overlap_raided overlap_raided_ln overlap_raided_sum overlap_rd_sum_ln overlap_full overlap_full_sum overlap_fll_s_ln overlap_1y {
