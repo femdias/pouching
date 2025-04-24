@@ -129,1416 +129,783 @@ Notes:
 . 
 .         // identifying poaching events
 .         *do "${prepare}/202503_evt_m"
+.                 
+.                 // identifying the main poached individual
+.                 *do "${prepare}/202503_mainpc"
+.                 
+.                 // identifying event types
+.                 *do "${prepare}/202503_evttype"
 .         
 .         // constructing worker-level panel with coworkers of the poached indi
 > viduals
 .         *do "${prepare}/202503_cowork_panel_m"
-.         *do "${prepare}/202503_cowork_panel_m_LOOP1"
-.         *do "${prepare}/202503_cowork_panel_m_LOOP2"
-.         do "${prepare}/202503_cowork_panel_m_LOOP3"
-
-. // Poaching Project
-. // Created by: Fabiano Dal-Ri
-. // (fd237@cornell.edu; dalri.fabiano@gmail.com)
-. // Date created: May 2024
-. 
-. // Purpose: Constructing the panel with coworkers
-. 
-. *--------------------------*
-. * BUILD
-. *--------------------------*
-. 
-. /*
-> 
-> // PART I: LIST ORIGIN AND DESTINATION PLANTS, ALONG WITH MONTHS OF INTEREST
-> 
->         // this panel will be constructed separately for each cohort
->         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
->  673/683 { 
->                         
->         use "${data}/202503_evt_m", clear
->         
->         // let's only keep the unique event identifiers
->         keep eventid d_plant o_plant pc_ym
->         egen unique = tag(eventid)
->         keep if unique == 1
-> 
->         // keep the cohort we're looping over           
->         keep if pc_ym == `ym'
->         
->                 // origin plants
->                 
->                 preserve
->                 
->                         keep eventid o_plant pc_ym
->                         rename o_plant plant_id
->                         compress
->                         save "${temp}/202503_o_plant_`ym'", replace
->         
->                 restore
->         
->                 // destination plants
->                 
->                 preserve
->                 
->                         keep eventid d_plant pc_ym
->                         rename d_plant plant_id
->                         compress
->                         save "${temp}/202503_d_plant_`ym'", replace
->                         
->                 restore
->                 
->         clear
->         
->         }
->         
-> // PART II: LISTING COWORKERS AND FINDING THEM
->         
->         // this panel will be constructed separately for each cohort
->         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
->  673/683 {
->         
->         // origin coworkers
->                 
->                 local o_ym = `ym'-12 // origin coworkers are identified 12 mo
-> nths before the event
->                 
->                 use "${data}/rais_m/rais_m`o_ym'", clear
->                 
->                 merge m:1 plant_id using "${temp}/202503_o_plant_`ym'"
->                 keep if _merge == 3
->                 drop _merge
->                 
->                 keep cpf eventid pc_ym 
->                 
->                 compress
->                 save "${temp}/202503_o_cw_`ym'", replace
->                 
->         // destination coworkers
->         
->                 local d_ym = `ym' // destination coworkers are identified at 
-> the time of the event
->                 
->                 use "${data}/rais_m/rais_m`d_ym'", clear
->                 
->                 merge m:1 plant_id using "${temp}/202503_d_plant_`ym'"
->                 keep if _merge == 3
->                 drop _merge
->                 
->                 keep cpf eventid pc_ym
->                 
->                 compress
->                 save "${temp}/202503_d_cw_`ym'", replace
->                 
->         // finding these workers in monthly RAIS files  
-> 
->         local ym_l12 = `ym' - 12
->         local ym_f12 = `ym' + 12
-> 
->         // origin coworkers
->         
->         forvalues yymm=`ym_l12'/`ym_f12' {
->                 
->                 use "${data}/rais_m/rais_m`yymm'", clear
->                 
->                 drop year month firm_id hire_year hire_month hire_day occ_1d 
-> occ_3d ///
->                         sep_month contract_salary salary_type legal_nature cn
-> ae20_subclass
->                 
->                 merge 1:1 cpf using "${temp}/202503_o_cw_`ym'"
->                 keep if _merge == 3
->                 drop _merge
->                 
->                 compress
->                 save "${temp}/202503_o_cw_`ym'_`yymm'", replace
->                 
->         }
->         
->         // destination coworkers
->         
->         forvalues yymm=`ym_l12'/`ym_f12' {
->                 
->                 use "${data}/rais_m/rais_m`yymm'", clear
->                 
->                 drop year month firm_id hire_year hire_month hire_day occ_1d 
-> occ_3d ///
->                         sep_month contract_salary salary_type legal_nature cn
-> ae20_subclass
->                 
->                 merge 1:1 cpf using "${temp}/202503_d_cw_`ym'"
->                 keep if _merge == 3
->                 drop _merge
->                 
->                 compress
->                 save "${temp}/202503_d_cw_`ym'_`yymm'", replace
->                 
->         }
->         
->         // combining all months in a cohort planel
->                 
->         // origin
->         
->         use "${temp}/202503_o_cw_`ym'", clear
->                         
->                 expand 25
->                 sort cpf
->                         
->                         by cpf: gen ym = pc_ym - 13 + _n
->                         format ym %tm
->                         
->                         gen ym_rel = ym - pc_ym
->                         
->                         local ym_l12 = `ym' - 12
->                         local ym_f12 = `ym' + 12
->                         
->                         forvalues yymm=`ym_l12'/`ym_f12' {
->                         
->                                 merge 1:1 cpf ym using "${temp}/202503_o_cw_`
-> ym'_`yymm'", nogen update
-> 
->                         }
->         compress
->         save "${temp}/202503_o_cw_`ym'_complete", replace
->         
->                 // removing heavy temporary files
->                 
->                 clear
->                 forvalues yymm=`ym_l12'/`ym_f12' {
->                 rm "${temp}/202503_o_cw_`ym'_`yymm'.dta"
->                 }
->         
->         // destination
->         
->         use "${temp}/202503_d_cw_`ym'", clear
->                         
->                 expand 25
->                 sort cpf
->                         
->                         by cpf: gen ym = pc_ym - 13 + _n
->                         format ym %tm
->                         
->                         gen ym_rel = ym - pc_ym
->                         
->                         local ym_l12 = `ym' - 12
->                         local ym_f12 = `ym' + 12
->                         
->                         forvalues yymm=`ym_l12'/`ym_f12' {
->                         
->                                 merge 1:1 cpf ym using "${temp}/202503_d_cw_`
-> ym'_`yymm'", nogen update
-> 
->                         }
->         compress
->         save "${temp}/202503_d_cw_`ym'_complete", replace
->         
->                 // removing heavy temporary files
->                 
->                 clear
->                 forvalues yymm=`ym_l12'/`ym_f12' {
->                 rm "${temp}/202503_d_cw_`ym'_`yymm'.dta"
->                 }
->                         
->         }
->         
-> // PART III: ORGANIZING AUXILIARY DATA SETS
-> 
->         // keeping event level information we need
-> 
->                 use "${data}/202503_evt_m", clear
->                 
->                 keep eventid o_plant d_plant d_n_emp_lavg o_n_emp_lavg multip
-> le
->                 
->                 // only 1 observation for each event id
->                 egen unique = tag(eventid)
->                 keep if unique == 1
->                 drop unique
->                 
->                 // saving
->                 save "${temp}/202503_evt_vars", replace
->                 
->         // keeping list of poached individuals
->         
->                 use "${data}/202503_evt_m", clear
->                 
->                 drop if eventid == . // THIS WILL BE CORRECTED SOON!! DELETE 
-> THIS LINE THEN!!!
->                 keep eventid pc_cpf pc_dir pc_spv pc_emp pc_d_dir pc_d_spv pc
-> _d_emp
->                 rename pc_cpf cpf
->                 
->                 save "${temp}/202503_pc_ind", replace
->         
-> // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
-> 
->         // this panel will be constructed separately for each cohort
->         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
->  673/683 {
->         
->         use "${temp}/202503_o_cw_`ym'_complete", clear
->         
->         // event-level information
->         merge m:1 eventid using "${temp}/202503_evt_vars"
->         drop if _merge == 2
->         drop _merge
->                 
->         // wages variables
->                 
->                 // adjusting wages ---- THIS IS ALSO TEMPORARY --- WILL EVENT
-> UALLY BE DONE WHEN CONSTRUCTING THE MONTHLY DS
->                 
->                 gen year = year(dofm(ym))
->                 merge m:1 year using "${input}/auxiliary/ipca_brazil"
->                 generate index_2017 = index if year == 2017
->                 egen index_base = max(index_2017)
->                 generate adj_index = index / index_base
->                 drop if _merge == 2
->                                 
->                         // in level
->                         generate wage_real = earn_avg_month_nom / adj_index
->                 
->                         // in logs
->                         gen wage_real_ln = ln(wage_real)
->                         
->                 drop year index _merge index_2017 index_base adj_index
->                 
->                 // other wage variables
->                 
->                 // wage in t=-12, level
->                 
->                 gen wage_real_l12_temp = wage_real if ym_rel == -12
->                 egen wage_real_l12 = max(wage_real_l12_temp), by(cpf)
->                 
->                 drop wage_real_l12_temp
->                 
->                 // wage in t=-12, log
->                 
->                 gen wage_real_ln_l12_temp = wage_real_ln if ym_rel == -12
->                 egen wage_real_ln_l12 = max(wage_real_ln_l12_temp), by(cpf)
->                 
->                 drop wage_real_ln_l12_temp
->                         
->                 // wage in t=0, level
->                 
->                 gen wage_real_0_temp = wage_real if ym_rel == 0
->                 egen wage_real_0 = max(wage_real_0_temp), by(cpf)
->                 
->                 drop wage_real_0_temp
->                 
->                 // wage in t=0, log
->                 
->                 gen wage_real_ln_0_temp = wage_real_ln if ym_rel == 0
->                 egen wage_real_ln_0 = max(wage_real_ln_0_temp), by(cpf)
->                 
->                 drop wage_real_ln_0_temp                
->                                 
->         // identifying the poached individuals among the coworkers
->         
->         merge m:1 eventid cpf using "${temp}/202503_pc_ind"
->         drop if _merge == 2
->         drop _merge
->         
->                 // organzing the newly added variables
->                 replace pc_dir = 0 if pc_dir == .
->                 replace pc_spv = 0 if pc_spv == .
->                 replace pc_emp = 0 if pc_emp == .
->                 replace pc_d_dir = 0 if pc_d_dir == .
->                 replace pc_d_spv = 0 if pc_d_spv == .
->                 replace pc_d_emp = 0 if pc_d_emp == .
->                 
->                 // unique variable identifying the poached individuals
->                 gen pc_individual = (pc_dir == 1 | pc_spv == 1 | pc_emp == 1)
->                 
->         // identify the raided individuals among the coworkers  
->         
->                 // set hiring year-month
->                 gen hire_ym = ym(year(hire_date), month(hire_date))
->                 format hire_ym %tm
->                                 
->                         // identify raiding events
->                         
->                         gen raid = ((ym == hire_ym) & (hire_ym != .)) /// hir
-> ed in the month
->                                    & (plant_id == d_plant) /// moving to dest
-> ination plant
->                                    & (pc_individual == 0) // not a poached in
-> dividual 
->                                  
->                                 // let's identify who was raided more than on
-> ce
->                                 egen raid_n = sum(raid), by(cpf)
->                                 gen raid_multiple = (raid_n > 1)
->                                 drop raid_n
->                                  
->                                 // if an individual is raided more than once,
->  use only the first raiding
->                                 gen ym_raid = ym if raid == 1
->                                 egen ym_raid_min = min(ym_raid), by(cpf)
->                                 replace raid = 0 if ym_raid != ym_raid_min
->                                 drop ym_raid ym_raid_min
->                                 
->                         // raid types according to occupations
->                         
->                                 // spv in origin
->                                 
->                                 gen spv_l12_temp = spv if ym_rel == -12
->                                 egen spv_l12 = max(spv_l12_temp), by(cpf)
->                                 
->                                 gen raid_spv_temp = (raid == 1 & spv_l12 == 1
-> )
->                                 egen raid_spv = max(raid_spv_temp), by(cpf)
->                                 
->                                 drop spv_l12_temp raid_spv_temp
->                                 
->                                 // dir in origin
->                                 
->                                 gen dir_l12_temp = dir if ym_rel == -12
->                                 egen dir_l12 = max(dir_l12_temp), by(cpf)
->                                 
->                                 gen raid_dir_temp = (raid == 1 & dir_l12 == 1
-> )
->                                 egen raid_dir = max(raid_dir_temp), by(cpf)
->                                 
->                                 drop dir_l12_temp raid_dir_temp
->                                 
->                                 // emp in origin
->                                 
->                                 gen emp = (dir == 0 & spv == 0) // THIS SHOUL
-> D BE CREATED WAY BEFORE!!!!!!!
->                                 
->                                 gen emp_l12_temp = emp if ym_rel == -12
->                                 egen emp_l12 = max(emp_l12_temp), by(cpf)
->                                 
->                                 gen raid_emp_temp = (raid == 1 & emp_l12 == 1
-> )
->                                 egen raid_emp = max(raid_emp_temp), by(cpf)
->                                 
->                                 drop emp_l12_temp raid_emp_temp
->                                 
->                                 // spv in destination
->                                 
->                                 gen raid_d_spv_temp = (raid == 1 & spv == 1)
->                                 egen raid_d_spv = max(raid_d_spv_temp), by(cp
-> f)
->                                 
->                                 drop raid_d_spv_temp
->                                 
->                                 // dir in destination
->                                 
->                                 gen raid_d_dir_temp = (raid == 1 & dir == 1)
->                                 egen raid_d_dir = max(raid_d_dir_temp), by(cp
-> f)
->                                 
->                                 drop raid_d_dir_temp
->                                 
->                                 // emp in destination
->                                 
->                                 gen raid_d_emp_temp = (raid == 1 & emp == 1)
->                                 egen raid_d_emp = max(raid_d_emp_temp), by(cp
-> f)
->                                 
->                                 drop raid_d_emp_temp
->                                 
->                         // identify raided individuals
->                         egen raid_individual = max(raid), by(cpf)
->                         
->         // saving
->         compress
->         save "${temp}/202503_o_cw_`ym'_complete", replace
->         
->         }       
->         
->         
-> */      
-.         
-.                         // CONTINUAR RODANDO A PARTIR DAQUI
-.         
-. // PART V: ADDING FIXED EFFECTS
-. 
-.         // this panel will be constructed separately for each cohort
-.         *foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/67
-> 1 673/683 { // ALL EVENTS
-.         *foreach ym of numlist 601/611  { // LOOP 1
-.         *foreach ym of numlist 613/623  { // LOOP 2
-.         foreach ym of numlist 625/635  { // LOOP 3
-  2.         *foreach ym of numlist 637/647  { // LOOP 4
-.         *foreach ym of numlist 649/659  { // LOOP 5
-.         *foreach ym of numlist 661/671  { // LOOP 6
-.         *foreach ym of numlist 673/683  { // LOOP 7
-.         
-.         use "${temp}/202503_o_cw_`ym'_complete", clear
-  3.         
-.                 // worker FE
-.                 merge m:1 cpf using "${AKM}/AKM_2003_2008_both_workerFE", kee
-> p(master match) nogen
-  4.                 rename naive_FE_worker worker_naive_fe
-  5.                 rename akm_FE_worker worker_akm_fe
-  6.                 
-.                 // firm FE
-.                 tostring plant_id, generate(plant_id_str) format(%014.0f)
-  7.                 gen firm_id = substr(plant_id_str, 1, 8)
-  8.                 destring firm_id, replace force
-  9.                 merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE"
-> , keep(master match) nogen
- 10.                 rename naive_FE_firm firm_naive_fe
- 11.                 rename akm_FE_firm firm_akm_fe
- 12.                 drop plant_id_str firm_id
- 13.                 
-.                 // origin firm FE
-.                 tostring o_plant, generate(o_plant_str) format(%014.0f)
- 14.                 gen firm_id = substr(o_plant_str, 1, 8)
- 15.                 destring firm_id, replace force
- 16.                 merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE"
-> , keep(master match) nogen
- 17.                 rename naive_FE_firm o_firm_naive_fe
- 18.                 rename akm_FE_firm o_firm_akm_fe
- 19.                 drop o_plant_str firm_id
- 20.                 
-.                 // destination firm FE
-.                 tostring d_plant, generate(d_plant_str) format(%014.0f)
- 21.                 gen firm_id = substr(d_plant_str, 1, 8)
- 22.                 destring firm_id, replace force
- 23.                 merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE"
-> , keep(master match) nogen
- 24.                 rename naive_FE_firm d_firm_naive_fe
- 25.                 rename akm_FE_firm d_firm_akm_fe
- 26.                 drop d_plant_str firm_id
- 27.         
-.         // saving
-.         compress
- 28.         save "${temp}/202503_o_cw_`ym'_complete", replace
- 29.         
-.                                         timer off 1
- 30.                                         
-.                                         timer list
- 31.                                         
-.         }       
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,802,325
-        from master                15,802,325  
-        from using                          0  
-
-    Matched                        43,817,175  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(10451431 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    13,063,232
-        from master                13,063,232  
-        from using                          0  
-
-    Matched                        46,556,268  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     1,359,150
-        from master                 1,359,150  
-        from using                          0  
-
-    Matched                        58,260,350  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     3,211,625
-        from master                 3,211,625  
-        from using                          0  
-
-    Matched                        56,407,875  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_625_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    17,987,300
-        from master                17,987,300  
-        from using                          0  
-
-    Matched                        49,759,350  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(11654140 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    14,758,807
-        from master                14,758,807  
-        from using                          0  
-
-    Matched                        52,987,843  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     1,800,925
-        from master                 1,800,925  
-        from using                          0  
-
-    Matched                        65,945,725  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     4,392,625
-        from master                 4,392,625  
-        from using                          0  
-
-    Matched                        63,354,025  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_626_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    19,206,700
-        from master                19,206,700  
-        from using                          0  
-
-    Matched                        50,965,350  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(12297646 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,773,342
-        from master                15,773,342  
-        from using                          0  
-
-    Matched                        54,398,708  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     2,064,125
-        from master                 2,064,125  
-        from using                          0  
-
-    Matched                        68,107,925  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     4,155,375
-        from master                 4,155,375  
-        from using                          0  
-
-    Matched                        66,016,675  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_627_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    19,689,975
-        from master                19,689,975  
-        from using                          0  
-
-    Matched                        51,312,400  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(12354042 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,588,532
-        from master                15,588,532  
-        from using                          0  
-
-    Matched                        55,413,843  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     1,835,825
-        from master                 1,835,825  
-        from using                          0  
-
-    Matched                        69,166,550  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     4,233,900
-        from master                 4,233,900  
-        from using                          0  
-
-    Matched                        66,768,475  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_628_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    19,269,125
-        from master                19,269,125  
-        from using                          0  
-
-    Matched                        48,528,025  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(11943010 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,198,271
-        from master                15,198,271  
-        from using                          0  
-
-    Matched                        52,598,879  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     1,811,300
-        from master                 1,811,300  
-        from using                          0  
-
-    Matched                        65,985,850  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     4,719,825
-        from master                 4,719,825  
-        from using                          0  
-
-    Matched                        63,077,325  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_629_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    19,461,975
-        from master                19,461,975  
-        from using                          0  
-
-    Matched                        48,597,575  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(12052743 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,307,496
-        from master                15,307,496  
-        from using                          0  
-
-    Matched                        52,752,054  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     1,805,475
-        from master                 1,805,475  
-        from using                          0  
-
-    Matched                        66,254,075  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     5,025,000
-        from master                 5,025,000  
-        from using                          0  
-
-    Matched                        63,034,550  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_630_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    20,878,975
-        from master                20,878,975  
-        from using                          0  
-
-    Matched                        50,925,325  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(12920449 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    16,440,027
-        from master                16,440,027  
-        from using                          0  
-
-    Matched                        55,364,273  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     2,123,000
-        from master                 2,123,000  
-        from using                          0  
-
-    Matched                        69,681,300  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     5,647,100
-        from master                 5,647,100  
-        from using                          0  
-
-    Matched                        66,157,200  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_631_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    20,314,900
-        from master                20,314,900  
-        from using                          0  
-
-    Matched                        47,213,225  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(12361081 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,991,214
-        from master                15,991,214  
-        from using                          0  
-
-    Matched                        51,536,911  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     2,527,025
-        from master                 2,527,025  
-        from using                          0  
-
-    Matched                        65,001,100  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     4,828,225
-        from master                 4,828,225  
-        from using                          0  
-
-    Matched                        62,699,900  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_632_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    21,058,900
-        from master                21,058,900  
-        from using                          0  
-
-    Matched                        50,125,750  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(12843198 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    16,585,300
-        from master                16,585,300  
-        from using                          0  
-
-    Matched                        54,599,350  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     2,426,225
-        from master                 2,426,225  
-        from using                          0  
-
-    Matched                        68,758,425  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     4,828,775
-        from master                 4,828,775  
-        from using                          0  
-
-    Matched                        66,355,875  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_633_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    19,574,000
-        from master                19,574,000  
-        from using                          0  
-
-    Matched                        45,119,025  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(11686573 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,142,522
-        from master                15,142,522  
-        from using                          0  
-
-    Matched                        49,550,503  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     2,150,475
-        from master                 2,150,475  
-        from using                          0  
-
-    Matched                        62,542,550  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     5,694,075
-        from master                 5,694,075  
-        from using                          0  
-
-    Matched                        58,998,950  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_634_complete.dta saved
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    15,590,250
-        from master                15,590,250  
-        from using                          0  
-
-    Matched                        37,572,725  
-    -----------------------------------------
-plant_id_str generated as str14
-firm_id: all characters numeric; replaced as long
-(9307931 missing values generated)
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                    12,068,507
-        from master                12,068,507  
-        from using                          0  
-
-    Matched                        41,094,468  
-    -----------------------------------------
-o_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     1,721,775
-        from master                 1,721,775  
-        from using                          0  
-
-    Matched                        51,441,200  
-    -----------------------------------------
-d_plant_str generated as str14
-firm_id: all characters numeric; replaced as long
-
-    Result                      Number of obs
-    -----------------------------------------
-    Not matched                     5,034,975
-        from master                 5,034,975  
-        from using                          0  
-
-    Matched                        48,128,000  
-    -----------------------------------------
-  (0 bytes saved)
-file poaching/temp/202503_o_cw_635_complete.dta saved
-
-.         
-.         /*
->         
->         
-> // PART V: ADDING VARIABLES INDICATING TENURE OVERLAP OF WORKER WITH POACHED 
-> INDIVIDUAL
-> 
->         // this panel will be constructed separately for each cohort
->         foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671
->  673/683 {
->                 
->         use "${temp}/202503_o_cw_`ym'_complete", clear  
->                 
->                 if _N > 0 {
-> 
->                 // construct variables that indicate tenure overlap
->                 // tenure in RAIS is reported in december or last month of pe
-> rson in the firm
->                 // let us compute a "running" tenure instead
->                 gen tenure_ym = ym - hire_ym
->                 
->                 // identify cases we have more than 1 pc individual -- we won
-> 't calculate overlap in this case
->                 egen n_pc = sum(pc_individual), by(event_id ym_rel)
-> 
->                 // tenure of pc individual expanded to the event
->                 gen tenure_ym_pc_aux = tenure_ym if (ym_rel <= -1 & pc_indivi
-> dual == 1)
->                 egen tenure_ym_pc = max(tenure_ym_pc_aux), by(event_id ym_rel
-> )
->                 drop tenure_ym_pc_aux
->                 replace tenure_ym_pc = . if n_pc != 1
->                 
->                         // if tenure_ym_pc is smaller than 12 in t=-1, do not
->  calculate this
->                         gen tenure_ym_pc_l1_aux = tenure_ym_pc if ym_rel == -
-> 1
->                         egen tenure_ym_pc_l1 = max(tenure_ym_pc_l1_aux), by(e
-> vent_id)
->                         replace tenure_ym_pc = . if tenure_ym_pc_l1 < 12
->                         drop tenure_ym_pc_l1_aux tenure_ym_pc_l1
->                         
->                 // tenure overlap in each month
->                 gen tenure_overlap_ym = .
->                 replace tenure_overlap_ym = min(tenure_ym, tenure_ym_pc) ///
->                         if plant_id == o_plant /// worker still employed in o
-> rigin plant
->                         & ym_rel <= -1 /// before the poaching event
->                         & pc_individual == 0 // doesn't make sense for poache
-> d individuals
->                 replace tenure_overlap_ym = . if n_pc != 1
->                 
->                 // tenure overlap when co-employment terminates
->                 egen tenure_overlap = max(tenure_overlap_ym), by(event_id cpf
-> )
->                 
->                 // labeling new variables
->                 label var tenure_ym          "Tenure (in Months)"
->                 label var n_pc               "Number of Poached Individuals i
-> n the Event"
->                 label var tenure_ym_pc       "Tenure (in Months) of the Poach
-> ed Individual"
->                 label var tenure_overlap_ym  "Cumulative Tenure Overlap (in M
-> onths)"
->                 label var tenure_overlap     "Total Tenure Overlap"
->                 
->                 // saving
->                 save "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", re
-> place
->                 
->                 }
-> 
->         }
->         }
->                 
-> *--------------------------*
-> * EXIT
-> *--------------------------*
-> 
-> cap rm "${temp}/key_evts_m.dta"
-> cap rm "${temp}/o_plants.dta"
-> cap rm "${temp}/cw.dta"
-> 
-> forvalues ym=516/695 {
-> 
->         cap rm "${temp}/cw_`ym'.dta"
-> 
-> }
-> 
-> clear
-
-end of do-file
-
-.         *do "${prepare}/202503_cowork_panel_m_LOOP4"
-.         *do "${prepare}/202503_cowork_panel_m_LOOP5"
-.         *do "${prepare}/202503_cowork_panel_m_LOOP6"
-.         *do "${prepare}/202503_cowork_panel_m_LOOP7"
 .         
 .         // constructing event-level panel with poaching plants (destination p
 > lants)
 .         *do "${prepare}/202503_evt_panel_m"
 .         
+.         // constructing worker-level data set with poaching firms in t=0
+.         *do "${prepare}/202503_dest_panel_m"
+.         
 .         // event-level data set
 .         *do "${prepare}/202503_poach_ind"
-.         
-.         // constructing worker-level data set with poaching firms in t=0
-.         *do "${prepare}/dest_panel_m"
-.         
-.         // identifying event types (using destination occupation)
-.         *do "${prepare}/evt_type_m"
-.         
-.         // imposing sample selection restrictions to the analysis
-.         *do "${prepare}/sample_selection"
-.         
-. // PART IV: constructing main data sets
-. 
-.         *do "${prepare}/202503_poaching_evt"
-. 
-. *-----------------------------------------*
-. * ANALYSIS (FINAL) - FELIPE: USE THIS
-. *-----------------------------------------*
-. 
-. // MAIN ANALYSIS
-. 
-.         // imposing restrictions and listing the events we want
-.         *do "${analysis}/eventlist"     
-.         
-.         // exhibits
-.         *do "${analysis}/final_sumstats"
-.         *do "${analysis}/final_pred1"
-.         *do "${analysis}/final_pred2"
-.         *do "${analysis}/final_pred3"
-.         *do "${analysis}/final_pred4"
-.         *do "${analysis}/final_pred5"
-.         *do "${analysis}/final_pred6"
-.         *do "${analysis}/final_pred7"
-.         *do "${analysis}/final_alternatives"
-.         
-.         // other analyses
-.         *do "${analysis}/final_preddelta"
-.         
-. // TESTING OTHER HYPOTHESES
-. 
-.         // hypothesis: managers are the owners of the destination firm (spino
-> ffs)
-.         *do "${analysis}/test_spinoffs"
-.         
-.         // hypothesis: tenure overlap + strength of information 
-.         *do "${analysis}/summary_tenureoverlap"
-.         
-. // ROBUSTNESS: RESULTS WITHOUT RECLASSIFICATIONS        
-. 
-.         // imposing restrictions and listing the events we want
-.         *do "${analysis}/eventlist_noreclass"
-.         
-.         // organing exhibits before submission
-.         *do "${analysis}/final_pred1_noreclass"
-.         *do "${analysis}/final_pred2_noreclass"
-.         *do "${analysis}/final_pred3_noreclass"
-.         *do "${analysis}/final_pred4_noreclass"
-.         *do "${analysis}/final_pred5_noreclass"
-.         *do "${analysis}/final_pred6_noreclass"
-.         *do "${analysis}/final_pred7_noreclass"
-.         *do "${analysis}/final_alternatives_noreclass"
-. 
-. // ROBUSTNESS: TABLES WITH 0 RAIDES
-. 
-.         *do "${analysis}/final_pred4_zero"
-.         *do "${analysis}/final_pred5_zero"
-.         *do "${analysis}/final_alternatives_zero"
-.         
-.         *do "${analysis}/final_pred4_zeroonly"
-.         *do "${analysis}/final_pred5_zeroonly"
-.         *do "${analysis}/final_alternatives_zeroonly"
-. 
-. *-----------------------------------------*
-. * ANALYSIS (202503 WORK) -- FABIANO'S STUFF
-. *-----------------------------------------*
-. 
-. // MAIN ANALYSIS
-. 
-.         // imposing restrictions and listing the events we want
-.         *do "${analysis}/eventlist"     
-.         
-.         // exhibits
-.         *do "${analysis}/202503_sumstats"
-.         *do "${analysis}/202503_pred1"
-.         *do "${analysis}/202503_pred2"
-.         *do "${analysis}/final_pred3"
-.         *do "${analysis}/202503_pred4"
-.         *do "${analysis}/202503_pred5"
-.         *do "${analysis}/202503_pred6"
-.         *do "${analysis}/final_pred7"
-.         *do "${analysis}/final_alternatives"
-.         
-.         // other analyses
-.         *do "${analysis}/final_preddelta"
-.         
-. // TESTING OTHER HYPOTHESES
-. 
-.         // hypothesis: managers are the owners of the destination firm (spino
-> ffs)
-.         *do "${analysis}/test_spinoffs"
-.         
-.         // hypothesis: tenure overlap + strength of information 
-.         *do "${analysis}/summary_tenureoverlap"
-.         
-. // ROBUSTNESS: RESULTS WITHOUT RECLASSIFICATIONS        
-. 
-.         // imposing restrictions and listing the events we want
-.         *do "${analysis}/eventlist_noreclass"
-.         
-.         // organing exhibits before submission
-.         *do "${analysis}/final_pred1_noreclass"
-.         *do "${analysis}/final_pred2_noreclass"
-.         *do "${analysis}/final_pred3_noreclass"
-.         *do "${analysis}/final_pred4_noreclass"
-.         *do "${analysis}/final_pred5_noreclass"
-.         *do "${analysis}/final_pred6_noreclass"
-.         *do "${analysis}/final_pred7_noreclass"
-.         *do "${analysis}/final_alternatives_noreclass"
-. 
-. // ROBUSTNESS: TABLES WITH 0 RAIDES
-. 
-.         *do "${analysis}/final_pred4_zero"
-.         *do "${analysis}/final_pred5_zero"
-.         *do "${analysis}/final_alternatives_zero"
-.         
-.         *do "${analysis}/final_pred4_zeroonly"
-.         *do "${analysis}/final_pred5_zeroonly"
-.         *do "${analysis}/final_alternatives_zeroonly"
-. 
-. 
-. 
-. 
-. 
-.         
-. 
-. 
-. 
-.         
-. 
-. *****************************************************************************
-> **
-. /* ARCHIVE
-> 
-> *--------------------------- mar 27 2025 archive ----------------------------
-> ---
-> 
->         // Figure 1: 
->         
->                 // baseline graph
->                 do "${analysis}/es_baseline"
->         
->                 // understanding baseline (raw averages)
->                 do "${analysis}/es_baseline_raw" // FD NOTE: I haven't organi
-> zed this yet
->         
->         // Figure 2: 
->         
->                 // quality of new hires
->                 do "${analysis}/quality_dest_hire"
->         
->         // Table 1:
->         
->                 // summary statistics
->                 do "${analysis}/summary_statistics"
->         
->         // Table 2
->         
->                 // information available
->                 do "${analysis}/table2"
->                 
->         // Table 3
->         
->                 // information is needed
->                 do "${analysis}/table3"
->                 
->         // Destination growth
->         
->                 // # of hires and # total employess
->                 do "${analysis}/destgrowth"
->                 
->         // Trying something different: overlap between spv-spv and emp-emp
->         do "${analysis}/overlap"
->         
->         // Review why there are missing values
->         do "${auxiliary}/review_missing_variables"
->         
->         // Check if some variables are created correctly
->         do "${auxiliary}/vars_dont_look_right"
->         
->         // Check creation of variables for which we nly had the log
->         do "${auxiliary}/check_vars_in_levels"
-> 
-> *--------------------------- nov 19 2024 archive ----------------------------
-> ---
-> 
->         // Figure 3: 
->         
->                 // CDF quality at origin
->                 do "${analysis}/quality_origin"
->         
->                 // reg quality at origin
->                 do "${analysis}/reg_quality_origin"
->                 
->                 // generating CDF for subset of events that have at least 1 r
-> aided worker and at least 1 moveable worker
->                 do "${analysis}/quality_origin_sel_evts"
->                 
->         // Table 2:
->         
->                 // v1
->                 do "${analysis}/table2"
->         
->                 // v2: include ind. and event time FE
->                 do "${analysis}/table2_v2"
-> 
->         // Table 3:
->         
->                 // v1
->                 do "${analysis}/table3"
->         
->                 // v2: include ind. and event time FE
->                 do "${analysis}/table3_v2"
->                 
-> *-------------------------- other archive -----------------------------------
-> --
-> 
-> 
->         // firm-level event study: baseline figures with raw averages
->         *do "${analysis}/es_raw_firm"
->         
->         // firm-level event study: analysis using regressions
->         *do "${analysis}/es_reg_firm"
->         
->                 // heterogeneity: by type of movement (to dir, to spv, to emp
-> )
->                 *do "${analysis}/es_reg_firm_type"
->                 
->                 // heterogeneity: by origin firm size
->                 *do "${analysis}/es_reg_firm_originsize"
->                 
->                 // heterogeneity: by destination firm size
->                 *do "${analysis}/es_reg_firm_destinationsize"
->                 
->                 // heterogeneity: by region (same or different)
->                 *do "${analysis}/es_reg_firm_region"
->         
->         // hires-level "event study" -- ?? -- tentative analysis so far 
->         *do "${analysis}/es_reg_hires"
->         
->         // table: wage regressions
->         
->                 // testing information hypothesis
->                 *do "${analysis}/reg_wage_info"         
-> 
-> *------------------------------ monthly rs ----------------------------------
-> ---
-> 
->         // prepare
-> 
->                 // organizing full RAIS (monthly panel)
->                 do "programs/prepare/archive_20240708/rais_m_rs"
->                 
->                 // identifying poaching events
->                 do "programs/prepare/archive_20240708/evt_m_rs"
->                 
->                 // constructing worker-level data set with poaching events in
->  t=0
->                 do "programs/prepare/archive_20240708/evt_work_m_rs"
->                 
->                 // constructing worker-level panel with coworkers only
->                 do "programs/prepare/archive_20240708/cowork_panel_m_rs"
->                 
->                 // constructing event-level panel with poaching plants (d_pla
-> nts)
->                 do "programs/prepare/archive_20240708/evt_panel_m_rs"
->                 
->                 // auxiliary data set: wages for coworkers
->                 do "programs/prepare/archive_20240708/wage_real_ln_cw"
->                 
->         // analysis
->         
->                 // sample selection (imposing additional criteria on the even
-> ts)
->                 do "programs/analysis/archive_20240708/sample_selection"
-> 
->                 // summary stats
->                 do "programs/analysis/archive_20240708/sumstats"
->         
->                 // firm-level event study
->                 do "programs/analysis/archive_20240708/es_firm_dir"
->         
->                 // wage distribution: before vs. after poaching
->                 do "programs/analysis/archive_20240708/wage_dist_dir"
->         
->                 // wage regression: poached workers only; correlation with "i
-> nformation"
->                 do "programs/analysis/archive_20240708/wage_corrinfo_dir"
->         
->                 // wage regression: comparison with similar retained workers
->                 do "programs/analysis/archive_20240708/wage_xretained_dir"
-> 
-> 
-> *------------------------------- quarterly ----------------------------------
-> ---
-> 
->         // organizing quarterly panel
->         do "programs/prepare/archive_20240430/RAIS_Quarterly_RS"
->         
->         // identifying poaching events
->         do "programs/prepare/archive_20240430/PoachingEvents_Quarterly_RS"
->         
->                 // Daniela's version
->                 do "programs/prepare/archive_20240430/evtdefine"
->         
->         // constructing the panel with coworkers
->         do "programs/prepare/archive_20240430/CoWorkers_Panel_Quarterly_RS"
->         
->                 // Daniela's version
->                 do "programs/prepare/archive_20240430/coworker_panel_q_rs"
->         
->         // creating the panel with poaching firms
->         do "programs/prepare/archive_20240430/PoachingEvents_Panel_Quarterly_
-> RS"
->         
->                 // Daniela's version
->                 do "programs/prepare/archive_20240430/events_panel_rs" 
->                 
+.         *do "${prepare}/202503_poach_ind_LOOP1"
+.         *do "${prepare}/202503_poach_ind_LOOP2"
+.         do "${prepare}/202503_poach_ind_LOOP3"
 
-end of do-file
+. // Poaching Project
+. // Created by: Fabiano Dal-Ri
+. // (fd237@cornell.edu; dalri.fabiano@gmail.com)
+. // Date created: August 2024
+. 
+. // Purpose: Create data set with poached individuals only
+. 
+. *--------------------------*
+. * BUILD
+. *--------------------------*
+. 
+. // variables from cowork_panel_m
+. 
+.         // this panel will be constructed separately for each cohort
+.         foreach ym of numlist 625/635 { 
+  2. 
+.         use "${data}/202503_cowork_panel_m/202503_o_cw_`ym'", clear
+  3.         
+.         // creating alternative raided workers variable -- MOVE THIS TO COWOR
+> K_PANEL_M_SPV, EVENTUALLY
+.         // reassigning poached individuals who are not the main one as raided
+>  individuals
+.         
+.                 gen raidpc = (raid == 1 | (ym_rel == 0 & pc_individual == 1 &
+>  main_individual == 0))
+  4.                 
+.                 gen raidpc_individual = (raid_individual == 1 | (pc_individua
+> l == 1 & main_individual == 0))
+  5.                         
+.         // organizing variables we want to keep
+.         
+.                 // cnae_o, cnae_d
+.                 
+.                 tostring cnae20_class, gen(cnae20_class_str) format(%05.0f)
+  6.                 gen cnae20_2d = substr(cnae20_class_str, 1, 2)
+  7.                 destring cnae20_2d, force replace
+  8.                 
+.                 gen cnae_o_temp = cnae20_2d if ym_rel == -12
+  9.                 egen cnae_o = max(cnae_o_temp), by(eventid)
+ 10.                 
+.                 gen cnae_d_temp = cnae20_2d if ym_rel == 0
+ 11.                 egen cnae_d = max(cnae_d_temp), by(eventid)
+ 12.                 
+.                 drop cnae20_class_str cnae20_2d cnae_o_temp cnae_d_temp
+ 13.                 
+.                 // o_avg_worker_naive_fe
+.                 
+.                 gen o_avg_worker_naive_fe_temp = worker_naive_fe if ym_rel ==
+>  -12
+ 14.                 egen o_avg_worker_naive_fe = mean(o_avg_worker_naive_fe_te
+> mp), by(eventid)
+ 15.                 
+.                 drop o_avg_worker_naive_fe_temp
+ 16.                 
+.                 // o_avg_worker_akm_fe
+.                 
+.                 gen o_avg_worker_akm_fe_temp = worker_akm_fe if ym_rel == -12
+ 17.                 egen o_avg_worker_akm_fe = mean(o_avg_worker_akm_fe_temp),
+>  by(eventid)
+ 18.                 
+.                 drop o_avg_worker_akm_fe_temp
+ 19.                 
+.                 // o_size
+.         
+.                 gen o_size_temp = 1 if ym_rel == -12
+ 20.                 egen o_size = sum(o_size_temp), by(eventid)
+ 21.                 
+.                 drop o_size_temp
+ 22.                 
+.                 // pc_age
+.                 
+.                 gen pc_age_temp = age if ym_rel == -12 & pc_individual == 1
+ 23.                 egen pc_age = mean(pc_age_temp), by(eventid)
+ 24.                 
+.                 drop pc_age_temp
+ 25.                 
+.                         // pc_age
+.                 
+.                         gen main_age_temp = age if ym_rel == -12 & main_indiv
+> idual == 1
+ 26.                         egen main_age = mean(main_age_temp), by(eventid)
+ 27.                 
+.                         drop main_age_temp
+ 28.                 
+.                 // pc_exp
+.                 
+.                 gen pc_exp_temp = age - educ_years - 6 if ym_rel == -12 & pc_
+> individual == 1
+ 29.                 
+.                         // note: in some cases, this is negative or zero
+.                         // issue: young people with too many education years
+.                         // in these cases, we assign pc_exp = 1 (they were em
+> ployed, after all)
+.                         replace pc_exp_temp = 1 if pc_exp <= 0
+ 30.                         
+.                 egen pc_exp = mean(pc_exp_temp), by(eventid)
+ 31.                 
+.                 drop pc_exp_temp
+ 32.                 
+.                         // main_exp
+.                 
+.                         gen main_exp_temp = age - educ_years - 6 if ym_rel ==
+>  -12 & main_individual == 1
+ 33.                 
+.                                 // note: in some cases, this is negative or z
+> ero
+.                                 // issue: young people with too many educatio
+> n years
+.                                 // in these cases, we assign main_exp = 1 (th
+> ey were employed, after all)
+.                                 replace main_exp_temp = 1 if main_exp <= 0
+ 34.                                 
+.                         egen main_exp = mean(main_exp_temp), by(eventid)
+ 35.                         
+.                         drop main_exp_temp
+ 36.                 
+.                 // pc_worker_naive_fe
+.                 
+.                 gen pc_worker_naive_fe_temp = worker_naive_fe if ym_rel == -1
+> 2 & pc_individual == 1
+ 37.                 egen pc_worker_naive_fe = mean(pc_worker_naive_fe_temp), b
+> y(eventid)
+ 38.                 
+.                 drop pc_worker_naive_fe_temp
+ 39.                 
+.                         // main_worker_naive_fe
+.                 
+.                         gen main_worker_naive_fe_temp = worker_naive_fe if ym
+> _rel == -12 & main_individual == 1
+ 40.                         egen main_worker_naive_fe = mean(main_worker_naive
+> _fe_temp), by(eventid)
+ 41.                 
+.                         drop main_worker_naive_fe_temp
+ 42.                         
+.                 // pc_worker_akm_fe
+.                 
+.                 gen pc_worker_akm_fe_temp = worker_akm_fe if ym_rel == -12 & 
+> pc_individual == 1
+ 43.                 egen pc_worker_akm_fe = mean(pc_worker_akm_fe_temp), by(ev
+> entid)
+ 44.                 
+.                 drop pc_worker_akm_fe_temp
+ 45.                 
+.                         // main_worker_akm_fe
+.                 
+.                         gen main_worker_akm_fe_temp = worker_akm_fe if ym_rel
+>  == -12 & main_individual == 1
+ 46.                         egen main_worker_akm_fe = mean(main_worker_akm_fe_
+> temp), by(eventid)
+ 47.                 
+.                         drop main_worker_akm_fe_temp    
+ 48.         
+.                 // pc_wage_d
+.                 
+.                 gen pc_wage_d_temp = wage_real_ln if ym_rel == 0 & pc_individ
+> ual == 1
+ 49.                 egen pc_wage_d = mean(pc_wage_d_temp), by(eventid)
+ 50.                 
+.                 drop pc_wage_d_temp
+ 51.                 
+.                         // main_wage_d
+.                 
+.                         gen main_wage_d_temp = wage_real_ln if ym_rel == 0 & 
+> main_individual == 1
+ 52.                         egen main_wage_d = mean(main_wage_d_temp), by(even
+> tid)
+ 53.                         
+.                         drop main_wage_d_temp
+ 54.                 
+.                 // pc_wage_d_lvl
+.                 
+.                 gen pc_wage_d_lvl_temp = wage_real if ym_rel == 0 & pc_indivi
+> dual == 1
+ 55.                 egen pc_wage_d_lvl = mean(pc_wage_d_lvl_temp), by(eventid)
+ 56.                 
+.                 drop pc_wage_d_lvl_temp
+ 57.                 
+.                         // main_wage_d_lvl
+.                 
+.                         gen main_wage_d_lvl_temp = wage_real if ym_rel == 0 &
+>  main_individual == 1
+ 58.                         egen main_wage_d_lvl = mean(main_wage_d_lvl_temp),
+>  by(eventid)
+ 59.                         
+.                         drop main_wage_d_lvl_temp
+ 60.                         
+.                 // pc_wage_o_l1
+.                 
+.                 gen pc_wage_o_l1_temp = wage_real_ln if ym_rel == -1 & pc_ind
+> ividual == 1
+ 61.                 egen pc_wage_o_l1 = mean(pc_wage_o_l1_temp), by(eventid)
+ 62.                 
+.                 drop pc_wage_o_l1_temp
+ 63.                 
+.                         // pc_wage_o_l1
+.                 
+.                         gen main_wage_o_l1_temp = wage_real_ln if ym_rel == -
+> 1 & main_individual == 1
+ 64.                         egen main_wage_o_l1 = mean(main_wage_o_l1_temp), b
+> y(eventid)
+ 65.                         
+.                         drop main_wage_o_l1_temp
+ 66.                         
+.                 // pc_wage_o_l1_lvl
+.                 
+.                 gen pc_wage_o_l1_lvl_temp = wage_real if ym_rel == -1 & pc_in
+> dividual == 1
+ 67.                 egen pc_wage_o_l1_lvl = mean(pc_wage_o_l1_lvl_temp), by(ev
+> entid)
+ 68.                 
+.                 drop pc_wage_o_l1_lvl_temp
+ 69.                 
+.                         // main_wage_o_l1_lvl
+.                 
+.                         gen main_wage_o_l1_lvl_temp = wage_real if ym_rel == 
+> -1 & main_individual == 1
+ 70.                         egen main_wage_o_l1_lvl = mean(main_wage_o_l1_lvl_
+> temp), by(eventid)
+ 71.                         
+.                         drop main_wage_o_l1_lvl_temp
+ 72.                         
+.                 // rd_coworker_naive_fe
+.                 
+.                 gen rd_coworker_naive_fe_temp = worker_naive_fe if ym_rel == 
+> -12 & raid_individual == 1
+ 73.                 egen rd_coworker_naive_fe = mean(rd_coworker_naive_fe_temp
+> ), by(eventid)
+ 74.                 
+.                 drop rd_coworker_naive_fe_temp
+ 75.                 
+.                         // rdpc_coworker_naive_fe
+.                 
+.                         gen rdpc_coworker_naive_fe_temp = worker_naive_fe if 
+> ym_rel == -12 & raidpc_individual == 1
+ 76.                         egen rdpc_coworker_naive_fe = mean(rdpc_coworker_n
+> aive_fe_temp), by(eventid)
+ 77.                         
+.                         drop rdpc_coworker_naive_fe_temp
+ 78. 
+.                 // rd_coworker_akm_fe
+.                 
+.                 gen rd_coworker_akm_fe_temp = worker_akm_fe if ym_rel == -12 
+> & raid_individual == 1
+ 79.                 egen rd_coworker_akm_fe = mean(rd_coworker_akm_fe_temp), b
+> y(eventid)
+ 80.                 
+.                 drop rd_coworker_akm_fe_temp
+ 81.                 
+.                         // rdpc_coworker_akm_fe
+.                 
+.                         gen rdpc_coworker_akm_fe_temp = worker_akm_fe if ym_r
+> el == -12 & raidpc_individual == 1
+ 82.                         egen rdpc_coworker_akm_fe = mean(rdpc_coworker_akm
+> _fe_temp), by(eventid)
+ 83.                         
+.                         drop rdpc_coworker_akm_fe_temp  
+ 84.                         
+.                 // rd_coworker_n
+.                 
+.                 gen rd_coworker_n_temp = 1 if ym_rel == -12 & raid_individual
+>  == 1
+ 85.                 egen rd_coworker_n = sum(rd_coworker_n_temp), by(eventid)
+ 86.                 
+.                 drop rd_coworker_n_temp
+ 87.                 
+.                         // rdpc_coworker_n
+.                 
+.                         gen rdpc_coworker_n_temp = 1 if ym_rel == -12 & raidp
+> c_individual == 1
+ 88.                         egen rdpc_coworker_n = sum(rdpc_coworker_n_temp), 
+> by(eventid)
+ 89.                 
+.                         drop rdpc_coworker_n_temp
+ 90.                 
+.                 // rd_coworker_wage_o_lvl
+.                 
+.                 gen rd_coworker_wage_o_lvl_temp = wage_real if ym_rel == -12 
+> & raid_individual == 1
+ 91.                 egen rd_coworker_wage_o_lvl = mean(rd_coworker_wage_o_lvl_
+> temp), by(eventid)
+ 92.                 
+.                 drop rd_coworker_wage_o_lvl_temp
+ 93.                 
+.                         // rdpc_coworker_wage_o_lvl
+.                         
+.                         gen rdpc_coworker_wage_o_lvl_temp = wage_real if ym_r
+> el == -12 & raidpc_individual == 1
+ 94.                         egen rdpc_coworker_wage_o_lvl = mean(rdpc_coworker
+> _wage_o_lvl_temp), by(eventid)
+ 95.                         
+.                         drop rdpc_coworker_wage_o_lvl_temp
+ 96.                 
+.                 // rd_coworker_wage_d_lvl
+.                 
+.                 gen rd_coworker_wage_d_lvl_temp = wage_real if raid == 1 & ra
+> id_individual == 1
+ 97.                 egen rd_coworker_wage_d_lvl = mean(rd_coworker_wage_d_lvl_
+> temp), by(eventid)
+ 98.                 
+.                 drop rd_coworker_wage_d_lvl_temp
+ 99.                 
+.                         // rdpc_coworker_wage_d_lvl
+.                 
+.                         gen rdpc_coworker_wage_d_lvl_temp = wage_real if raid
+> pc == 1 & raidpc_individual == 1
+100.                         egen rdpc_coworker_wage_d_lvl = mean(rdpc_coworker
+> _wage_d_lvl_temp), by(eventid)
+101.                         
+.                         drop rdpc_coworker_wage_d_lvl_temp
+102.                         
+.         // keeping the variables we need
+.         keep eventid cnae_d cnae_o o_avg_worker_naive_fe o_avg_worker_akm_fe 
+> o_size pc_age main_age pc_exp main_exp ///
+>                 pc_worker_naive_fe pc_worker_akm_fe main_worker_naive_fe main
+> _worker_akm_fe ///
+>                 pc_wage_d main_wage_d pc_wage_d_lvl main_wage_d_lvl pc_wage_o
+> _l1 ///
+>                 main_wage_o_l1 pc_wage_o_l1_lvl main_wage_o_l1_lvl rd_coworke
+> r_naive_fe rd_coworker_akm_fe ///
+>                 rdpc_coworker_naive_fe rdpc_coworker_akm_fe ///
+>                 rd_coworker_n rdpc_coworker_n rd_coworker_wage_d_lvl rdpc_cow
+> orker_wage_d_lvl ///
+>                 rd_coworker_wage_o_lvl rdpc_coworker_wage_o_lvl
+103.         
+.         // keeping one observation per event
+.         egen unique = tag(eventid)
+104.         keep if unique == 1
+105.         drop unique
+106.         
+.         // save temporary file
+.         save "${temp}/from_cowork_panel_m_`ym'", replace
+107.         
+.         }
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(10451431 missing values generated)
+(57,234,720 missing values generated)
+(57,706,315 missing values generated)
+(58,143,875 missing values generated)
+(275 missing values generated)
+(57,866,813 missing values generated)
+(275 missing values generated)
+(57,234,720 missing values generated)
+(59,614,148 missing values generated)
+(59,614,797 missing values generated)
+(59,614,148 missing values generated)
+(67 real changes made)
+(59,614,797 missing values generated)
+(59 real changes made)
+(59,616,174 missing values generated)
+(22,097,900 missing values generated)
+(59,616,626 missing values generated)
+(22,710,825 missing values generated)
+(59,615,549 missing values generated)
+(15,083,475 missing values generated)
+(59,616,063 missing values generated)
+(15,399,825 missing values generated)
+(59,614,148 missing values generated)
+(59,614,797 missing values generated)
+(59,614,148 missing values generated)
+(59,614,797 missing values generated)
+(59,614,148 missing values generated)
+(59,614,797 missing values generated)
+(59,614,148 missing values generated)
+(59,614,797 missing values generated)
+(59,610,663 missing values generated)
+(29,031,650 missing values generated)
+(59,610,211 missing values generated)
+(28,856,375 missing values generated)
+(59,608,657 missing values generated)
+(27,295,225 missing values generated)
+(59,608,143 missing values generated)
+(27,081,850 missing values generated)
+(59,604,364 missing values generated)
+(59,603,715 missing values generated)
+(59,604,364 missing values generated)
+(24,719,550 missing values generated)
+(59,603,715 missing values generated)
+(24,401,100 missing values generated)
+(59,604,364 missing values generated)
+(24,719,550 missing values generated)
+(59,603,715 missing values generated)
+(24,401,100 missing values generated)
+(59,614,797 observations deleted)
+file poaching/temp/from_cowork_panel_m_625.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(11654140 missing values generated)
+(65,036,784 missing values generated)
+(65,567,407 missing values generated)
+(66,061,778 missing values generated)
+(65,756,276 missing values generated)
+(65,036,784 missing values generated)
+(67,740,119 missing values generated)
+(67,740,896 missing values generated)
+(67,740,119 missing values generated)
+(96 real changes made)
+(67,740,896 missing values generated)
+(83 real changes made)
+(67,742,715 missing values generated)
+(23,416,525 missing values generated)
+(67,743,194 missing values generated)
+(23,923,000 missing values generated)
+(67,741,930 missing values generated)
+(15,897,375 missing values generated)
+(67,742,491 missing values generated)
+(16,218,475 missing values generated)
+(67,740,119 missing values generated)
+(67,740,896 missing values generated)
+(67,740,119 missing values generated)
+(67,740,896 missing values generated)
+(67,740,119 missing values generated)
+(67,740,896 missing values generated)
+(67,740,119 missing values generated)
+(67,740,896 missing values generated)
+(67,736,425 missing values generated)
+(35,542,725 missing values generated)
+(67,735,946 missing values generated)
+(35,313,825 missing values generated)
+(67,734,162 missing values generated)
+(32,964,150 missing values generated)
+(67,733,601 missing values generated)
+(32,688,150 missing values generated)
+(67,728,778 missing values generated)
+(67,728,001 missing values generated)
+(67,728,778 missing values generated)
+(29,874,075 missing values generated)
+(67,728,001 missing values generated)
+(29,565,700 missing values generated)
+(67,728,778 missing values generated)
+(29,874,075 missing values generated)
+(67,728,001 missing values generated)
+(29,565,700 missing values generated)
+(67,740,896 observations deleted)
+file poaching/temp/from_cowork_panel_m_626.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(12297646 missing values generated)
+(67,365,168 missing values generated)
+(67,913,226 missing values generated)
+(68,449,924 missing values generated)
+(700 missing values generated)
+(68,133,436 missing values generated)
+(67,365,168 missing values generated)
+(70,165,543 missing values generated)
+(70,166,417 missing values generated)
+(70,165,543 missing values generated)
+(101 real changes made)
+(70,166,417 missing values generated)
+(96 real changes made)
+(70,168,115 missing values generated)
+(27,018,000 missing values generated)
+(70,168,619 missing values generated)
+(27,972,550 missing values generated)
+(70,167,349 missing values generated)
+(18,551,425 missing values generated)
+(70,167,975 missing values generated)
+(18,998,250 missing values generated)
+(70,165,543 missing values generated)
+(70,166,417 missing values generated)
+(70,165,543 missing values generated)
+(70,166,417 missing values generated)
+(70,165,543 missing values generated)
+(70,166,417 missing values generated)
+(70,165,543 missing values generated)
+(70,166,417 missing values generated)
+(70,161,170 missing values generated)
+(34,264,575 missing values generated)
+(70,160,666 missing values generated)
+(33,750,850 missing values generated)
+(70,158,648 missing values generated)
+(31,717,625 missing values generated)
+(70,158,022 missing values generated)
+(31,407,725 missing values generated)
+(70,152,166 missing values generated)
+(70,151,292 missing values generated)
+(70,152,166 missing values generated)
+(28,686,200 missing values generated)
+(70,151,292 missing values generated)
+(28,376,400 missing values generated)
+(70,152,166 missing values generated)
+(28,686,200 missing values generated)
+(70,151,292 missing values generated)
+(28,376,400 missing values generated)
+(70,166,417 observations deleted)
+file poaching/temp/from_cowork_panel_m_627.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(12354042 missing values generated)
+(68,162,280 missing values generated)
+(68,708,928 missing values generated)
+(69,266,194 missing values generated)
+(800 missing values generated)
+(68,949,879 missing values generated)
+(68,162,280 missing values generated)
+(70,995,907 missing values generated)
+(70,996,645 missing values generated)
+(70,995,907 missing values generated)
+(126 real changes made)
+(70,996,645 missing values generated)
+(121 real changes made)
+(70,998,436 missing values generated)
+(26,773,725 missing values generated)
+(70,998,915 missing values generated)
+(27,496,300 missing values generated)
+(70,997,688 missing values generated)
+(18,363,275 missing values generated)
+(70,998,250 missing values generated)
+(18,835,300 missing values generated)
+(70,995,907 missing values generated)
+(70,996,645 missing values generated)
+(70,995,907 missing values generated)
+(70,996,645 missing values generated)
+(70,995,907 missing values generated)
+(70,996,645 missing values generated)
+(70,995,907 missing values generated)
+(70,996,645 missing values generated)
+(70,992,184 missing values generated)
+(35,103,875 missing values generated)
+(70,991,705 missing values generated)
+(34,870,200 missing values generated)
+(70,989,912 missing values generated)
+(32,695,750 missing values generated)
+(70,989,350 missing values generated)
+(32,468,825 missing values generated)
+(70,984,181 missing values generated)
+(70,983,443 missing values generated)
+(70,984,181 missing values generated)
+(29,407,350 missing values generated)
+(70,983,443 missing values generated)
+(29,256,900 missing values generated)
+(70,984,181 missing values generated)
+(29,407,350 missing values generated)
+(70,983,443 missing values generated)
+(29,256,900 missing values generated)
+(70,996,645 observations deleted)
+file poaching/temp/from_cowork_panel_m_628.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(11943010 missing values generated)
+(65,085,264 missing values generated)
+(65,611,661 missing values generated)
+(66,160,929 missing values generated)
+(65,856,029 missing values generated)
+(65,085,264 missing values generated)
+(67,791,182 missing values generated)
+(67,791,895 missing values generated)
+(67,791,182 missing values generated)
+(100 real changes made)
+(67,791,895 missing values generated)
+(99 real changes made)
+(67,793,567 missing values generated)
+(24,125,450 missing values generated)
+(67,794,028 missing values generated)
+(24,628,675 missing values generated)
+(67,792,873 missing values generated)
+(17,253,475 missing values generated)
+(67,793,413 missing values generated)
+(17,483,200 missing values generated)
+(67,791,182 missing values generated)
+(67,791,895 missing values generated)
+(67,791,182 missing values generated)
+(67,791,895 missing values generated)
+(67,791,182 missing values generated)
+(67,791,895 missing values generated)
+(67,791,182 missing values generated)
+(67,791,895 missing values generated)
+(67,787,544 missing values generated)
+(34,873,550 missing values generated)
+(67,787,083 missing values generated)
+(34,537,050 missing values generated)
+(67,785,114 missing values generated)
+(32,577,525 missing values generated)
+(67,784,574 missing values generated)
+(32,401,575 missing values generated)
+(67,778,908 missing values generated)
+(67,778,195 missing values generated)
+(67,778,908 missing values generated)
+(28,901,150 missing values generated)
+(67,778,195 missing values generated)
+(28,595,475 missing values generated)
+(67,778,908 missing values generated)
+(28,901,150 missing values generated)
+(67,778,195 missing values generated)
+(28,595,475 missing values generated)
+(67,791,895 observations deleted)
+file poaching/temp/from_cowork_panel_m_629.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(12052743 missing values generated)
+(65,337,168 missing values generated)
+(65,860,994 missing values generated)
+(66,419,740 missing values generated)
+(66,115,647 missing values generated)
+(65,337,168 missing values generated)
+(68,053,084 missing values generated)
+(68,054,082 missing values generated)
+(68,053,084 missing values generated)
+(106 real changes made)
+(68,054,082 missing values generated)
+(98 real changes made)
+(68,055,696 missing values generated)
+(26,843,775 missing values generated)
+(68,056,356 missing values generated)
+(27,312,875 missing values generated)
+(68,054,956 missing values generated)
+(19,484,775 missing values generated)
+(68,055,730 missing values generated)
+(19,863,525 missing values generated)
+(68,053,084 missing values generated)
+(68,054,082 missing values generated)
+(68,053,084 missing values generated)
+(68,054,082 missing values generated)
+(68,053,084 missing values generated)
+(68,054,082 missing values generated)
+(68,053,084 missing values generated)
+(68,054,082 missing values generated)
+(68,049,190 missing values generated)
+(35,207,000 missing values generated)
+(68,048,530 missing values generated)
+(34,949,750 missing values generated)
+(68,046,787 missing values generated)
+(32,737,800 missing values generated)
+(68,046,013 missing values generated)
+(32,520,025 missing values generated)
+(68,040,201 missing values generated)
+(68,039,203 missing values generated)
+(68,040,201 missing values generated)
+(28,559,800 missing values generated)
+(68,039,203 missing values generated)
+(28,295,450 missing values generated)
+(68,040,201 missing values generated)
+(28,559,800 missing values generated)
+(68,039,203 missing values generated)
+(28,295,450 missing values generated)
+(68,054,082 observations deleted)
+file poaching/temp/from_cowork_panel_m_630.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(12920449 missing values generated)
+(68,932,128 missing values generated)
+(69,493,112 missing values generated)
+(70,085,075 missing values generated)
+(50 missing values generated)
+(69,767,287 missing values generated)
+(50 missing values generated)
+(68,932,128 missing values generated)
+(71,797,527 missing values generated)
+(71,798,419 missing values generated)
+(71,797,527 missing values generated)
+(148 real changes made)
+(71,798,419 missing values generated)
+(141 real changes made)
+(71,800,336 missing values generated)
+(27,145,275 missing values generated)
+(71,800,852 missing values generated)
+(28,133,100 missing values generated)
+(71,799,574 missing values generated)
+(19,159,175 missing values generated)
+(71,800,176 missing values generated)
+(19,942,950 missing values generated)
+(71,797,527 missing values generated)
+(71,798,419 missing values generated)
+(71,797,527 missing values generated)
+(71,798,419 missing values generated)
+(71,797,527 missing values generated)
+(71,798,419 missing values generated)
+(71,797,527 missing values generated)
+(71,798,419 missing values generated)
+(71,794,930 missing values generated)
+(37,940,450 missing values generated)
+(71,794,414 missing values generated)
+(37,588,300 missing values generated)
+(71,792,809 missing values generated)
+(35,998,275 missing values generated)
+(71,792,207 missing values generated)
+(35,642,250 missing values generated)
+(71,786,792 missing values generated)
+(71,785,900 missing values generated)
+(71,786,792 missing values generated)
+(32,034,225 missing values generated)
+(71,785,900 missing values generated)
+(31,671,500 missing values generated)
+(71,786,792 missing values generated)
+(32,034,225 missing values generated)
+(71,785,900 missing values generated)
+(31,671,500 missing values generated)
+(71,798,419 observations deleted)
+file poaching/temp/from_cowork_panel_m_631.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(12361081 missing values generated)
+(64,827,000 missing values generated)
+(65,360,239 missing values generated)
+(65,940,169 missing values generated)
+(65,639,596 missing values generated)
+(64,827,000 missing values generated)
+(67,522,053 missing values generated)
+(67,522,974 missing values generated)
+(67,522,053 missing values generated)
+(136 real changes made)
+(67,522,974 missing values generated)
+(129 real changes made)
+(67,524,535 missing values generated)
+(25,798,050 missing values generated)
+(67,525,062 missing values generated)
+(26,643,525 missing values generated)
+(67,523,831 missing values generated)
+(18,514,350 missing values generated)
+(67,524,484 missing values generated)
+(19,117,250 missing values generated)
+(67,522,053 missing values generated)
+(67,522,974 missing values generated)
+(67,522,053 missing values generated)
+(67,522,974 missing values generated)
+(67,522,053 missing values generated)
+(67,522,974 missing values generated)
+(67,522,053 missing values generated)
+(67,522,974 missing values generated)
+(67,518,791 missing values generated)
+(35,226,750 missing values generated)
+(67,518,264 missing values generated)
+(35,031,225 missing values generated)
+(67,516,511 missing values generated)
+(33,252,275 missing values generated)
+(67,515,858 missing values generated)
+(32,951,400 missing values generated)
+(67,510,298 missing values generated)
+(67,509,377 missing values generated)
+(67,510,298 missing values generated)
+(28,303,500 missing values generated)
+(67,509,377 missing values generated)
+(27,973,550 missing values generated)
+(67,510,298 missing values generated)
+(28,303,500 missing values generated)
+(67,509,377 missing values generated)
+(27,973,550 missing values generated)
+(67,522,974 observations deleted)
+file poaching/temp/from_cowork_panel_m_632.dta saved
+cnae20_class_str generated as str5
+cnae20_2d: all characters numeric; replaced as byte
+(12843198 missing values generated)
+(68,337,264 missing values generated)
+(68,891,259 missing values generated)
+(69,490,430 missing values generated)
+(69,179,620 missing values generated)
+(68,337,264 missing values generated)
+(71,178,230 missing values generated)
+(71,179,086 missing values generated)
+(71,178,230 missing values generated)
+(158 real changes made)
+(71,179,086 missing values generated)
+(147 real changes made)
+(71,180,909 missing values generated)
+(27,046,450 missing values generated)
+(71,181,424 missing values generated)

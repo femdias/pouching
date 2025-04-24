@@ -158,9 +158,6 @@ foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { 
 		// director (1xx) is poached
 		gen pc_dir = (L.dir == 1) & ym==`ym'
 			
-		// director (1xx | top 5%) is poached
-		gen pc_dir5 = (L.dir5 == 1) & ym==`ym'
-			
 		// supervisor (xx0) is poached
 		gen pc_spv = (L.spv == 1) & ym==`ym'
 			
@@ -171,9 +168,6 @@ foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { 
 		
 		// director (1xx) is poached
 		gen pc_d_dir = (dir == 1) & ym==`ym'
-			
-		// director (1xx | top 5%) is poached
-		gen pc_d_dir5 = (dir5 == 1) & ym==`ym'
 			
 		// supervisor (xx0) is poached
 		gen pc_d_spv = (spv == 1) & ym==`ym'
@@ -195,8 +189,8 @@ foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { 
 	rename ym pc_ym
 	rename cpf pc_cpf
 
-	keep pc_cpf pc_ym d_plant o_plant pc_dir pc_dir5 pc_spv pc_emp pc_d_dir ///
-		pc_d_dir5 pc_d_spv pc_d_emp ///
+	keep pc_cpf pc_ym d_plant o_plant pc_dir pc_spv pc_emp pc_d_dir ///
+		pc_d_spv pc_d_emp ///
 		d_n_emp_lavg o_n_emp_lavg
 		
 	sort d_plant pc_ym
@@ -219,7 +213,6 @@ foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { 
 	
 	compress
 	save "${data}/202503_evt_m", replace
-	
 	
 // II. dealing with multiple poaching events in the same month and same origin/destination	
 	
@@ -317,6 +310,9 @@ foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { 
 	
 	compress
 	save "${data}/202503_evt_m", replace	
+	
+	
+	
 	
 *--------------------------*
 * EXIT

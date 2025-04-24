@@ -9,8 +9,6 @@
 * BUILD
 *--------------------------*
 
-/*
-
 // PART I: LIST ORIGIN AND DESTINATION PLANTS, ALONG WITH MONTHS OF INTEREST
 
 	// this panel will be constructed separately for each cohort
@@ -190,7 +188,7 @@
 		rm "${temp}/202503_d_cw_`ym'_`yymm'.dta"
 		}
 			
-	}
+	}	
 	
 // PART III: ORGANIZING AUXILIARY DATA SETS
 
@@ -217,6 +215,10 @@
 		rename pc_cpf cpf
 		
 		save "${temp}/202503_pc_ind", replace
+		
+*--------------------------*
+* BUILD -- ORIGIN FIRMS ONLY
+*--------------------------*			
 	
 // PART IV: ADDING MORE INFORMATION AND VARIABLES WE MIGHT NEED
 
@@ -383,22 +385,10 @@
 	
 	} 	
 	
-	
-*/	
-	
-			// CONTINUAR RODANDO A PARTIR DAQUI
-	
 // PART V: ADDING FIXED EFFECTS
 
 	// this panel will be constructed separately for each cohort
-	*foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 { // ALL EVENTS
-	*foreach ym of numlist 601/611 	{ // LOOP 1
-	*foreach ym of numlist 613/623  { // LOOP 2
-	*foreach ym of numlist 625/635  { // LOOP 3
-	*foreach ym of numlist 637/647  { // LOOP 4
-	*foreach ym of numlist 649/659  { // LOOP 5
-	*foreach ym of numlist 661/671  { // LOOP 6
-	*foreach ym of numlist 673/683  { // LOOP 7
+	foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {
 	
 	use "${temp}/202503_o_cw_`ym'_complete", clear
 	
@@ -437,44 +427,31 @@
 	// saving
 	compress
 	save "${temp}/202503_o_cw_`ym'_complete", replace
-	
-					timer off 1
-					
-					timer list
-					
-	}	
-	
-	/*
-	
+						
+	}		
 	
 // PART V: ADDING VARIABLES INDICATING TENURE OVERLAP OF WORKER WITH POACHED INDIVIDUAL
 
 	// this panel will be constructed separately for each cohort
 	foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {
 		
-	use "${temp}/202503_o_cw_`ym'_complete", clear	
+	use "${temp}/202503_o_cw_`ym'_complete", clear
+	
+		// identifying the main poached individual
+		merge m:1 eventid cpf using "${data}/202503_mainpc", keepusing(main) keep(match master)
+		replace main = 0 if main == .
 		
-		if _N > 0 {
-
+			rename main main_individual
+	
 		// construct variables that indicate tenure overlap
 		// tenure in RAIS is reported in december or last month of person in the firm
 		// let us compute a "running" tenure instead
 		gen tenure_ym = ym - hire_ym
-		
-		// identify cases we have more than 1 pc individual -- we won't calculate overlap in this case
-		egen n_pc = sum(pc_individual), by(event_id ym_rel)
 
 		// tenure of pc individual expanded to the event
-		gen tenure_ym_pc_aux = tenure_ym if (ym_rel <= -1 & pc_individual == 1)
-		egen tenure_ym_pc = max(tenure_ym_pc_aux), by(event_id ym_rel)
+		gen tenure_ym_pc_aux = tenure_ym if (ym_rel <= -1 & pc_individual == 1 & main_individual == 1)
+		egen tenure_ym_pc = max(tenure_ym_pc_aux), by(eventid ym_rel)
 		drop tenure_ym_pc_aux
-		replace tenure_ym_pc = . if n_pc != 1
-		
-			// if tenure_ym_pc is smaller than 12 in t=-1, do not calculate this
-			gen tenure_ym_pc_l1_aux = tenure_ym_pc if ym_rel == -1
-			egen tenure_ym_pc_l1 = max(tenure_ym_pc_l1_aux), by(event_id)
-			replace tenure_ym_pc = . if tenure_ym_pc_l1 < 12
-			drop tenure_ym_pc_l1_aux tenure_ym_pc_l1
 			
 		// tenure overlap in each month
 		gen tenure_overlap_ym = .
@@ -482,38 +459,44 @@
 			if plant_id == o_plant /// worker still employed in origin plant
 			& ym_rel <= -1 /// before the poaching event
 			& pc_individual == 0 // doesn't make sense for poached individuals
-		replace tenure_overlap_ym = . if n_pc != 1
 		
 		// tenure overlap when co-employment terminates
-		egen tenure_overlap = max(tenure_overlap_ym), by(event_id cpf)
+		egen tenure_overlap = max(tenure_overlap_ym), by(eventid cpf)
 		
 		// labeling new variables
 		label var tenure_ym          "Tenure (in Months)"
-		label var n_pc               "Number of Poached Individuals in the Event"
 		label var tenure_ym_pc       "Tenure (in Months) of the Poached Individual"
 		label var tenure_overlap_ym  "Cumulative Tenure Overlap (in Months)"
 		label var tenure_overlap     "Total Tenure Overlap"
 		
 		// saving
-		save "${data}/cowork_panel_m_`e'/cowork_panel_m_`e'_`ym'", replace
-		
-		}
+		save "${data}/202503_cowork_panel_m/202503_o_cw_`ym'", replace
 
-	}
 	}
 		
 *--------------------------*
 * EXIT
 *--------------------------*
 
-cap rm "${temp}/key_evts_m.dta"
-cap rm "${temp}/o_plants.dta"
-cap rm "${temp}/cw.dta"
-
-forvalues ym=516/695 {
-
-	cap rm "${temp}/cw_`ym'.dta"
-
-}
+/*
 
 clear
+
+foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {
+	
+	rm "${temp}/202503_o_plant_`ym'.dta"
+	rm "${temp}/202503_d_plant_`ym'.dta"
+	
+	rm "${temp}/202503_o_cw_`ym'.dta"
+	rm "${temp}/202503_d_cw_`ym'.dta"
+	
+	rm "${temp}/202503_o_cw_`ym'_complete.dta"
+	rm "${temp}/202503_d_cw_`ym'_complete.dta"
+		
+}
+
+rm "${temp}/202503_evt_vars.dta"
+rm "${temp}/202503_pc_ind.dta"
+
+
+

@@ -81,25 +81,31 @@
 
 	// identifying poaching events
 	*do "${prepare}/202503_evt_m"
+		
+		// identifying the main poached individual
+		*do "${prepare}/202503_mainpc"
+		
+		// identifying event types
+		*do "${prepare}/202503_evttype"
 	
 	// constructing worker-level panel with coworkers of the poached individuals
 	*do "${prepare}/202503_cowork_panel_m"
-	do "${prepare}/202503_cowork_panel_m_LOOP1"
-	*do "${prepare}/202503_cowork_panel_m_LOOP2"
-	*do "${prepare}/202503_cowork_panel_m_LOOP3"
-	*do "${prepare}/202503_cowork_panel_m_LOOP4"
-	*do "${prepare}/202503_cowork_panel_m_LOOP5"
-	*do "${prepare}/202503_cowork_panel_m_LOOP6"
-	*do "${prepare}/202503_cowork_panel_m_LOOP7"
 	
 	// constructing event-level panel with poaching plants (destination plants)
 	*do "${prepare}/202503_evt_panel_m"
 	
+	// constructing worker-level data set with poaching firms in t=0
+	*do "${prepare}/202503_dest_panel_m"
+	
 	// event-level data set
 	*do "${prepare}/202503_poach_ind"
-	
-	// constructing worker-level data set with poaching firms in t=0
-	*do "${prepare}/dest_panel_m"
+	do "${prepare}/202503_poach_ind_LOOP1"
+	*do "${prepare}/202503_poach_ind_LOOP2"
+	*do "${prepare}/202503_poach_ind_LOOP3"
+	*do "${prepare}/202503_poach_ind_LOOP4"
+	*do "${prepare}/202503_poach_ind_LOOP5"
+	*do "${prepare}/202503_poach_ind_LOOP6"
+	*do "${prepare}/202503_poach_ind_LOOP7"
 	
 	// identifying event types (using destination occupation)
 	*do "${prepare}/evt_type_m"
