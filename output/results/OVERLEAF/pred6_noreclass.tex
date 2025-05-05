@@ -1,0 +1,21 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{5}{c}}
+                &\multicolumn{5}{c}{Outcome: Manager ln(salary) at destination}  \\\cmidrule(lr){2-6}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   \\
+\midrule        &            &            &            &            &            \\
+Quality of raided workers&    0.397***&    0.127***&    0.132***&    0.112***&    0.083***\\
+                &  (0.025)   &  (0.017)   &  (0.017)   &  (0.016)   &  (0.022)   \\
+\# raided workers (ln)&            &            &            &            &   -0.026***\\
+                &            &            &            &            &  (0.007)   \\
+Quality of raided workers $\times$ \# raided workers (ln)&            &            &            &            &    0.022*  \\
+                &            &            &            &            &  (0.012)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm} \\ Dest. firm size &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Dest. firm growth &            &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+ \\ Obs         &     2564   &     2564   &     2564   &     2564   &     2564   \\
+R-Squared       &    0.087   &    0.662   &    0.664   &    0.680   &    0.687   \\
+\end{tabular}
+}

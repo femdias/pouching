@@ -1,0 +1,14 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{3}{c}}
+                &\multicolumn{3}{c}{Outcome: ln(salary) at destination}\\\cmidrule(lr){2-4}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   \\
+\midrule        &            &            &            \\
+Poached manager = 1&    0.397***&    0.404***&    0.202***\\
+                &  (0.012)   &  (0.012)   &  (0.010)   \\
+\\ \textbf{Manager controls} \\ Manager experience &            &   \cmark   &   \cmark   \\
+Manager ability &            &            &   \cmark   \\
+ \\ Obs         &    15928   &    15928   &    15928   \\
+R-Squared       &    0.059   &    0.079   &    0.379   \\
+\end{tabular}
+}

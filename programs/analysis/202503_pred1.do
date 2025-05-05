@@ -10,27 +10,26 @@
 * PANEL A
 *--------------------------*
 
-	use "${data}/poaching_evt", clear
+	use "${data}/202503_poach_ind", clear
 	
-	// we're only interested in spv-spv, spv-emp, and emp-spv
-	keep if type == 1 | type == 2 | type == 3
+	// which are the events we are interested in?
+	gen keep = .
+				
+		// identify the main events events we're interested in 
+		merge m:1 eventid using "${temp}/202503_eventlist"
+		replace keep = 1 if _merge == 3
+		drop _merge
 	
-	// keeping only the events we're interested in -- THIS PART HAS TO BE MODIFIED!!! USING TEMP FILE!!!
-	// WHAT I SHOULD DO HERE: RUN THE COMPLETE REGRESSION (ONCE I'VE DEFINED IT) & KEEP E(SAMPLE) == 1
-	// REVIEW THIS ONCE I GET TO PREDICTIONS 4, 5, AND 6
-	rename type spv
-	merge m:1 spv event_id using "${temp}/eventlist", keep(match)
-	rename spv type
+	keep if keep == 1
 	
 	// for this analysis, we need long format
 	// variable of interest: fe_firm
 	// note: origin = 1, destination = 2
 	
-	rename fe_firm_o fe_firm1
-	rename fe_firm_d fe_firm2
+	rename o_firm_akm_fe fe_firm1
+	rename d_firm_akm_fe fe_firm2
 	
-	egen unique_id = group(event_id type)
-	reshape long fe_firm, i(unique_id) j(or_dest)
+	reshape long fe_firm, i(eventid) j(or_dest)
 	
 	la var or_dest "Origin or destination"
 	la def or_dest 1 "Origin" 2 "Destination", replace
@@ -44,8 +43,10 @@
 	
 	// analysis
 
-		// testing differences in means and distributions
-		
+		// winsorize top and bottom .1%
+	
+		winsor fe_firm, gen(fe_firm_w) p(0.001)
+
 		ksmirnov fe_firm_w, by(or_dest)
 		local ks: display %4.3f r(p)
 		di "`ks'"
@@ -53,28 +54,35 @@
 		ttest fe_firm_w, by(or_dest)
 		local ttest: display %4.3f r(p)
 		di "`ttest'"
-		
-		// first figure: CDF
+		local diff = r(mu_2) - r(mu_1)
+		local diff: display %4.3f `diff'
+		di "`diff'"
+
+		// CDF
 		
 		distplot fe_firm_w, over(or_dest) xtitle("Firm productivity proxy (wage premium)") ///
 		ytitle("Cumulative probability") plotregion(lcolor(white)) ///
-		lcolor(black black) lpattern(solid dash) lwidth(medthick medthick) ///
+		lcolor(black black) lpattern(dash solid) lwidth(medthick medthick) ///
 		legend(order(1 2) region(lstyle(none))) ///
-		note("P-values: T-test = `ttest' ; K-S = `ks'", size(small))
+		text(.2 .65 "{bf:Equality of distributions test:}" ///
+		" K-S p-value < `ks'" " " "{bf: Equality of means:}" "{&beta}{subscript:D} - {&beta}{subscript:O} = `diff'" ///
+		"p-value < `ttest'" , justification(right))
 		
-		graph export "${results}/202503_pred1_cdf.pdf", as(pdf) replace
+		graph export "${results}/202503_prod_od_w_cdf.pdf", as(pdf) replace
 		
-		// second figure: PDF
+		// PDF
 		
-		// note: bwidth = .06 is ~1.5 times the default bandwidth
-		twoway kdensity fe_firm_w if or_dest == 1, n(50) bwidth(.06) lcolor(black) lpattern(solid) lwidth(medthick) || ///
-		kdensity fe_firm_w if or_dest == 2, n(50)  bwidth(.06) lcolor(black) lpattern(dash) lwidth(medthick) ///
+		// note: bwidth = .06 is 1.5 times the default bandwidth
+		twoway kdensity fe_firm_w if or_dest == 1, n(50) bwidth(.06) lcolor(black) lpattern(dash) lwidth(medthick) || ///
+		kdensity fe_firm_w if or_dest == 2, n(50)  bwidth(.06) lcolor(black) lpattern(solid) lwidth(medthick) ///
 		xtitle("Firm productivity proxy (wage premium)") ///
 		ytitle("Density") plotregion(lcolor(white)) ///
 		legend(order(1 "Origin" 2 "Destination") region(lstyle(none))) ///
-		note("P-values: T-test = `ttest' ; K-S = `ks'", size(small))
+		text(1.3 .65 "{bf:Equality of distributions test:}" ///
+		" K-S p-value < `ks'" " " "{bf: Equality of means:}" "{&beta}{subscript:D} - {&beta}{subscript:O} = `diff'" ///
+		"p-value < `ttest'" , justification(right))
 		
-		graph export "${results}/202503_pred1_pdf.pdf", as(pdf) replace
+		graph export "${results}/202503_prod_od_w_pdf.pdf", as(pdf) replace
 	
 *--------------------------*
 * PANEL B
@@ -82,32 +90,27 @@
 
 	use "${data}/202503_evt_panel_m", clear
 	
-	// we're only interested in spv-spv, spv-emp, and emp-spv
-	keep if type == 1 | type == 2 | type == 3
+	// which are the events we are interested in?
+	gen keep = .
+				
+		// identify the main events events we're interested in 
+		merge m:1 eventid using "${temp}/202503_eventlist"
+		replace keep = 1 if _merge == 3
+		drop _merge
 	
-	// keeping only the events we're interested in -- THIS PART HAS TO BE MODIFIED!!! USING TEMP FILE!!!
-	// WHAT I SHOULD DO HERE: RUN THE COMPLETE REGRESSION (ONCE I'VE DEFINED IT) & KEEP E(SAMPLE) == 1
-	// REVIEW THIS ONCE I GET TO PREDICTIONS 4, 5, AND 6
-	rename type spv
-	merge m:1 spv event_id using "${temp}/eventlist"
-	keep if _merge == 3
-	drop _merge
-	rename spv type
+	keep if keep == 1
 	
 	// outcome variables
 	
 		// total number of hires in destination plant
-		gen d_h = d_h_dir + d_h_spv + d_h_emp
-		
-			// hire variables: winsorize to remove outliers 
-			winsor d_h, gen(d_h_w) p(0.01) highonly
+		* d_hire: already in the data set
 	
-		// total number of employees in destination plant
-		* d_emp: already in the data set
+		// total number of workers in destination plant
+		* d_wkr: already in the data set
 						
 	// collapsing by ym_rel & setting up a panel
 	
-	collapse (median) d_h_w d_emp, by(ym_rel) // we report the median
+	collapse (median) d_hire d_wkr, by(ym_rel) // we report the median
 				
 	gen id = 1
 	order id
@@ -115,14 +118,14 @@
 	
 	// graphing
 	
-	tsline d_emp, recast(connect) mcolor(gs1) m(Oh) lcolor(gs1) ///
-		ytitle("Number of employees (monthly)") ylabel(150(25)275, grid glpattern(dot) glcolor(gs13*.3) gmax) ||  ///
-		tsline d_h_w, recast(bar) yaxis(2) color(gs8%60) ///
-		ytitle("Number of hires (monthly)", axis(2)) ylabel(4(4)16, grid glpattern(dot) glcolor(gs13*.3) gmax axis(2)) ///
+	tsline d_wkr, recast(connect) mcolor(gs1) m(Oh) lcolor(gs1) ///
+		ytitle("Number of employees (monthly)") ylabel(275(25)400, grid glpattern(dot) glcolor(gs13*.3) gmax) ||  ///
+		tsline d_hire, recast(bar) yaxis(2) color(gs8%60) ///
+		ytitle("Number of hires (monthly)", axis(2)) ylabel(8(4)20, grid glpattern(dot) glcolor(gs13*.3) gmax axis(2)) ///
 			graphregion(lcolor(white)) plotregion(lcolor(white)) ///
 		xtitle("Relative month (manager poached at t=-1, starts at t=0)") xlabel(-12(3)12) xline(-0.5, lpattern(dot) lcolor(gs13) lwidth(5)) ///
 		legend(order(1 "Firm size (left axis)" 2 "New hires (right axis)") region(lcolor(white)) pos(6) col(2)) ///
-		text(275 3.3 "Poaching event", size(medsmall) color(gs8))
+		text(400 3.3 "Poaching event", size(medsmall) color(gs8))
 		
-		graph export "${results}/202503_pred1_destgrowth.pdf", as(pdf) replace
+		graph export "${results}/202503_destgrowth.pdf", as(pdf) replace
 			

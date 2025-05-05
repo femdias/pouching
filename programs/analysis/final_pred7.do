@@ -188,80 +188,8 @@
 			
 			graph export "${results}/quality_dest_hire_w_pdf.pdf", as(pdf) replace
 				
-			
-	// ANALYSIS II. regression 
-	
-	drop if group == .
-	
-		// exp_ln
-			
-		gen exp = age - educ_years - 6
-		replace exp = 0 if exp <= 0
 		
-		gen exp_ln = ln(exp) 
-		replace exp_ln = -99 if exp_ln==.
-		g exp_m =(exp_ln==-99)
-			
-		// raided
-		gen raided = (group == 1)
-		label var raided "Raided new hire"
 
-	
-	eststo col1: reg fe_worker raided, rob
-	summ fe_worker, detail
-		local lhs: display %4.3f r(mean)
-		di "`lhs'"
-		estadd local lhs `lhs'
-	
-	eststo col2: reg fe_worker raided exp_ln exp_m, rob
-	summ fe_worker, detail
-		local lhs: display %4.3f r(mean)
-		di "`lhs'"
-		estadd local lhs `lhs'
-		estadd local exp "\cmark"
-		
-	eststo col2alt: areg fe_worker raided, rob absorb(d_plant)
-	summ fe_worker, detail
-		local lhs: display %4.3f r(mean)
-		di "`lhs'"
-		estadd local lhs `lhs'	
-		
-		estadd local firmfe "\cmark"
-	
-	eststo col3: areg fe_worker raided exp_ln exp_m, rob absorb(d_plant)
-	summ fe_worker, detail
-		local lhs: display %4.3f r(mean)
-		di "`lhs'"
-		estadd local lhs `lhs'
-		
-		estadd local firmfe "\cmark"
-		estadd local exp "\cmark"
-	
-	// display table
-	
-	esttab  col1 col2,  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label ///   
-		keep(raided) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///  only display standard errors 
-		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\textbf{Worker controls} \\ Worker experience = exp_ln"  ///
-		, labels("\cmark" ""))
-	
-	// save table
-
-	esttab col1 col2 using "${results}/pred7_reg.tex", booktabs  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label /// 
-		refcat(raided "\midrule", nolabel) ///
-		mgroups("Outcome: worker ability",  /// 
-		pattern(1 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
-		keep(raided) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///    
-		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\\ \textbf{Worker controls} \\ Worker experience = exp_ln" /// 
-		, labels("\cmark" ""))	
-		
 	save "${temp}/pred7_dataset", replace
 	
 	// ANALYSIS III. how long did they last
@@ -277,13 +205,11 @@
 		
 		levelsof ym, local(months)
 		
-		/*
-		
 		foreach ym of local months {
 		
 			use "${data}/rais_m/rais_m`ym'", clear
 			
-			keep cpf ym plant_id 
+			keep cpf ym plant_id // ADICIONAR PARA KEEP WAGE TAMBÉM
 			
 			merge 1:1 cpf ym using "${temp}/workers_`w'y"
 			keep if _merge == 3
@@ -292,8 +218,6 @@
 			save "${temp}/`w'y_`ym'", replace
 		
 		}
-		
-		*/
 		
 		clear
 		
@@ -333,6 +257,10 @@
 	gen emp3y = (d_plant == y3_plant)
 	replace emp3y = . if (pc_ym + 36 > ym(2017,12))
 	label var emp3y "In destination firm after 3 years"
+	
+	
+		// TBM CRIAR VARIABLS COM WAGE GROWTH
+		* gen wagegrowth1y = wage1y - wageathiring if emp1y == 1
 	
 	// first pass analysis
 	
@@ -375,39 +303,6 @@
 	
 	}
 	
-	esttab col1 col3 col1_1y col3_1y col1_2y col3_2y col1_3y col3_3y,  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label ///   
-		keep(raided) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///  only display standard errors 
-		stats(firmfe lhs N r2 , fmt(0 0 0 3) label("\\ Destination firm FE" "\\ Mean LHS" "Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\textbf{Worker controls} \\ Worker experience = exp_ln"  ///
-		, labels("\cmark" ""))
-	
-	esttab col1 col3 col1_1y col3_1y col1_2y col3_2y col1_3y col3_3y using "${results}/pred7_reg_extra.tex", booktabs  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label /// 
-		refcat(raided "\midrule", nolabel) ///
-		mgroups("Worker ability" "Retained 1 yr" "Retained 2 yrs" "Retained 3 yrs",  /// 
-		pattern(1 0 1 0 1 0 1 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
-		keep(raided) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///    
-		stats(firmfe lhs N r2 , fmt(0 0 0 3) label("Dest firm FE" "\\ Mean LHS" "Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\\ \textbf{Controls} \\ Worker experience = exp_ln" /// 
-		, labels("\cmark" ""))
-		
-	esttab col2 col3 col2_1y col3_1y col2_2y col3_2y col2_3y col3_3y using "${results}/pred7_reg_extra_v2.tex", booktabs  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label /// 
-		refcat(raided "\midrule", nolabel) ///
-		mgroups("Worker ability" "Retained 1 yr" "Retained 2 yrs" "Retained 3 yrs",  /// 
-		pattern(1 0 1 0 1 0 1 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
-		keep(raided) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///    
-		stats(firmfe lhs N r2 , fmt(0 0 0 3) label("Dest firm FE" "\\ Mean LHS" "Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\\ \textbf{Controls} \\ Worker experience = exp_ln" /// 
-		, labels("\cmark" ""))	
-		
 	esttab col2alt col3 col2alt_1y col3_1y col2alt_2y col3_2y col2alt_3y col3_3y using "${results}/pred7_reg_extra_v3.tex", booktabs  /// 
 		replace compress noconstant nomtitles nogap collabels(none) label /// 
 		refcat(raided "\midrule", nolabel) ///

@@ -242,13 +242,13 @@ set seed 6543
 	
 	// p10
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe   if or_dest==2, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe   if or_dest==2, d
 	matrix est2 = e(p10)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid  if or_dest==1, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w  if or_dest==1, d
 	matrix est1 = e(p10)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe, d
 	estadd matrix est2
 	estadd matrix est1
 	estadd scalar n = `n'
@@ -256,39 +256,39 @@ set seed 6543
 	
 	// p50
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe   if or_dest==2, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe   if or_dest==2, d
 	matrix est2 = e(p50)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid  if or_dest==1, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w  if or_dest==1, d
 	matrix est1 = e(p50)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe, d
 	estadd matrix est2
 	estadd matrix est1
 	est store p50
 	
 	// p90
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe  if or_dest==2, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe  if or_dest==2, d
 	matrix est2 = e(p90)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid if or_dest==1, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w if or_dest==1, d
 	matrix est1 = e(p90)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe , d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe , d
 	estadd matrix est2
 	estadd matrix est1
 	est store p90
 	
 	// mean
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe manu serv ret oth  if or_dest==2, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe manu serv ret oth  if or_dest==2, d
 	matrix est2 = e(mean)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid manu serv ret oth  if or_dest==1, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w manu serv ret oth  if or_dest==1, d
 	matrix est1 = e(mean)
 	
-	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_wage_w pc_wage_resid pc_age pc_exp pc_fe manu serv ret oth, d
+	estpost su  fe_firm fe_avgworker size_w rd_cw_wage_w pc_age pc_exp pc_fe manu serv ret oth, d
 	estadd matrix est2
 	estadd matrix est1
 	est store mean
@@ -305,15 +305,13 @@ set seed 6543
 	scalars("n Poaching events")
 		
 	// export table
-
-	esttab p10 p50 p90 mean diff using "${results}/summarystats_v2.tex", booktabs replace ///
+	
+	esttab p10 p50 p90 mean diff using "${results}/summarystats.tex", booktabs replace ///
 		label nonotes nonum nomtitle noobs ///
 		mgroups("\textbf{10th pct}" "\textbf{Median}" "\textbf{90th pct}" "\textbf{Mean}" "\textbf{Diff}" , ///
 		pattern(1 1 1 1 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///
-		refcat(fe_firm "\textbf{Firm variables}" manu "\\ \textbf{Industry}" pc_wage_w "\\ \textbf{Manager variables}" , nolabel) ///
+		refcat(fe_firm "\textbf{Firm characteristics}" manu "\\ \textbf{Industry}" pc_wage_w "\\ \textbf{Poached manager variables}" , nolabel) ///
 		cells("est2(fmt(2 2 0 2) label(Origin) pattern(1 1 1 1 0)) est1(fmt(2 2 0 2) label(Destination) pattern(1 1 1 1 0)) b(star pvalue(p) label(Diff) fmt(2 2 0 2) pattern(0 0 0 0 1))") starlevels(* 0.1 ** 0.05 *** 0.01) ///
 		scalars("n Poaching events")
-	
-	
-	
+		
 		

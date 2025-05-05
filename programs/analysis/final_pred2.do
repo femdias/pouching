@@ -139,36 +139,12 @@
 	eststo main: reghdfe ratio $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
 		& ym_rel >= -9, absorb(unique_id d_plant) vce(cluster unique_id)
 			
-	/*
-	eststo main_cumm: reghdfe ratio_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(unique_id d_plant) vce(cluster unique_id)
 		
-		eststo mainoneplus: reghdfe ratio $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(unique_id d_plant) vce(cluster unique_id)
-			
-		eststo mainoneplus_cumm: reghdfe ratio_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(unique_id d_plant) vce(cluster unique_id)	
-	*/				
 		
 	eststo mainnum: reghdfe numraid $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
 		& ym_rel >= -9, absorb(unique_id d_plant) vce(cluster unique_id)
 	
-	/*
-	eststo mainnum_cumm: reghdfe numraid_cum $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(unique_id d_plant) vce(cluster unique_id)	
-		
-		eststo mainnumoneplus: reghdfe numraid $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(unique_id d_plant) vce(cluster unique_id)
-			
-		eststo mainnumoneplus_cumm: reghdfe numraid_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(unique_id d_plant) vce(cluster unique_id)		
-		
-	eststo mainnonzero: reghdfe nonzeroraid $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(unique_id d_plant) vce(cluster unique_id)
-		
-	eststo mainnonzerohire: reghdfe nonzerohire $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(unique_id d_plant) vce(cluster unique_id)
-	*/
+
 	
 	// calculating number of observations
 	egen unique = tag(unique_id)if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12)
@@ -182,25 +158,6 @@
 *--------------------------*
 
 // "emp --> emp" events	
-
-	/*
-	
-	use "${data}/evt_panel_m_emp", clear
-	
-	// positive employment in all months
-	merge m:1 event_id using "${data}/sample_selection_emp", keep(match) nogen
-	
-	// identifying event types (using destination occupation) -- we need this to see what's occup in dest.
-	merge m:1 event_id using "${data}/evt_type_m_emp", keep(match) nogen
-	
-	// keep only people that became emp
-	keep if type_emp == 1
-		
-	save "${temp}/pred2_emp_emp", replace
-	
-	*/
-	
-	// organizing some variables we need
 	
 	use "${temp}/pred2_emp_emp", clear
 	
@@ -256,39 +213,10 @@
 	eststo control: reghdfe ratio $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
 		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)
 	
-	/*
-	eststo control_cumm: reghdfe ratio_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)	
-		
-		eststo controloneplus: reghdfe ratio $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(event_id d_plant) vce(cluster event_id)
-			
-		eststo controloneplus_cumm: reghdfe ratio_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(event_id d_plant) vce(cluster event_id)
-	*/		
-		
+
 	eststo controlnum: reghdfe numraid $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
 		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)
-	
-	/*
-	eststo controlnum_cumm: reghdfe numraid_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)	
-		
-		eststo controlnumoneplus: reghdfe numraid $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(event_id d_plant) vce(cluster event_id)
-			
-		eststo controlnumoneplus_cumm: reghdfe numraid_cumm $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-			& ym_rel >= -9 & total_raid >= 1, absorb(event_id d_plant) vce(cluster event_id)	
-		
-	eststo controlnonzero: reghdfe nonzeroraid $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)
-		
-	eststo controlzerohire: reghdfe zerohire $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)
-		
-	eststo controlnonzerohire: reghdfe nonzerohire $evt_vars if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12) ///
-		& ym_rel >= -9, absorb(event_id d_plant) vce(cluster event_id)
-	*/
+
 	
 	egen unique = tag(event_id) if pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12)
 	tab unique // 95,580
@@ -328,109 +256,14 @@
 		 ylabel(0(1)2) name(spv_num, replace)
 		 
 		 graph export "${results}/es_baseline_n.pdf", as(pdf) replace // THIS IS IN THE APPENDIX
-		
-	/* ARCHIVE
-				 
-	coefplot (main_cumm, recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-		 (control_cumm, recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-		 , ///
-		 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-		 plotregion(lcolor(white)) ///
-		 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-		 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-		 xtitle("Months relative to poaching event") ///
-		 ytitle("Share of new hires" "from the same firm as poached worker") ///
-		 ylabel(-.02(.02).08) name(spv, replace)
-		 
-		 graph export "${results}/es_baseline_cumm.pdf", as(pdf) replace
-			 
-		 
-		coefplot (mainoneplus, recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-			 (controloneplus, recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-			 , ///
-			 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-			 plotregion(lcolor(white)) ///
-			 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-			 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-			 xtitle("Months relative to poaching event") ///
-			 ytitle("Share of new hires" "from the same firm as poached worker") ///
-			 ylabel(-.02(.02).14) name(spv, replace)
-			 
-			 graph export "${results}/es_baseline_oneplus.pdf", as(pdf) replace
-			 
-			 
-			 coefplot (mainoneplus_cumm, recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-			 (controloneplus_cumm, recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-			 , ///
-			 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-			 plotregion(lcolor(white)) ///
-			 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-			 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-			 xtitle("Months relative to poaching event") ///
-			 ytitle("Share of new hires" "from the same firm as poached worker") ///
-			 ylabel(-.02(.02).14) name(spv, replace)
-			 
-			 graph export "${results}/es_baseline_oneplus_cumm.pdf", as(pdf) replace
-			 	 
-	coefplot (mainnum_cumm, recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-		 (controlnum_cumm, recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-		 , ///
-		 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-		 plotregion(lcolor(white)) ///
-		 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-		 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-		 xtitle("Months relative to poaching event") ///
-		 ytitle("Average number of raided hires" ) ///
-		 ylabel(0(1)8) name(spv_num, replace)
-		 
-		 graph export "${results}/es_baseline_cumm_n.pdf", as(pdf) replace
 
 		 
-		coefplot (mainnumoneplus, recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-			 (controlnumoneplus, recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-			 , ///
-			 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-			 plotregion(lcolor(white)) ///
-			 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-			 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-			 xtitle("Months relative to poaching event") ///
-			 ytitle("Average number of raided hires" ) ///
-			 ylabel(0(1)3) name(spv_num, replace)
-			 
-			 graph export "${results}/es_baseline_oneplus_n.pdf", as(pdf) replace
-			 
-			 
-		coefplot (mainnumoneplus_cumm, recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-			 (controlnumoneplus_cumm, recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-			  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-			 , ///
-			 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-			 plotregion(lcolor(white)) ///
-			 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-			 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-			 xtitle("Months relative to poaching event") ///
-			 ytitle("Average number of raided hires" ) ///
-			 ylabel(0(2)10) name(spv_num, replace)
-			 
-			 graph export "${results}/es_baseline_oneplus_n_cumm.pdf", as(pdf) replace
-			
-*/
-
+		 
+		 
 *--------------------------*
 * REGRESSION
 *--------------------------*		 
-
+/*
 // build -- supervisor events
 
 	use "${temp}/pred2_spv_spv", clear
@@ -517,7 +350,7 @@
 		// saving temp file
 		gen spv = 0
 		save "${temp}/pred2_reg_emp", replace
-	
+*/	
 // analysis
 
 	use "${temp}/pred2_reg_spv", clear
@@ -616,12 +449,12 @@
 		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
 		indicate("\\ \textbf{Destination firm controls} \\ Firm size = d_emp_ln", labels("\cmark" ""))
 		
-*/		
+		
 		
 *--------------------------*
 * IMPROVERS VS. NON-IMPROVERS
 *--------------------------*	
-						
+/*						
 // combining events and keeping what we need
 
 	use "${temp}/pred2_spv_spv", clear
@@ -802,6 +635,7 @@
 	// total number of events
 	
 	tab count if ym_rel == 0 &  pc_ym >= ym(2010,1) & pc_ym <= ym(2016,12)
+	*/
 	
 *--------------------------*
 * PLACEBO EVENTS
@@ -959,34 +793,4 @@
 		 
 		 graph export "${results}/pred2_mainno_`m'.pdf", as(pdf) replace	 
 		
-	coefplot (num_improvyes_`m', recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-		 (nct_improvyes_`m', recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-		 , ///
-		 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-		 plotregion(lcolor(white)) ///
-		 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-		 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-		 xtitle("Months relative to poaching event") ///
-		 ytitle("Share of new hires" "from the same firm as poached worker") ///
-		 name(spv, replace)
-		 
-		 graph export "${results}/pred2_numyes_`m'.pdf", as(pdf) replace
-		 
-	coefplot (num_improvno_`m', recast(connected) keep(${evt_vars}) msymbol(T) mcolor(black%60) mlcolor(black%80) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash)) ///
-		 (nct_improvno_`m', recast(connected) keep(${evt_vars}) msymbol(X) mcolor(black) mlcolor(black) msize(medium) ///
-		  levels(95) lcolor(black%60) ciopts(lcolor(black%60)) lpattern(dash_dot)) ///
-		 , ///
-		 omitted keep(${evt_vars}) vertical yline(0, lcolor(black)) xline(7, lcolor(black) lpattern(dash)) ///
-		 plotregion(lcolor(white)) ///
-		 legend(order(2 "Manager poached" 4 "Non-manager poached" ) rows(1) region(lcolor(white)) pos(6) ring(1)) ///
-		 xlabel(1 "-9" 4 "-6" 7 "-3" 10 "0" 13 "3" 16 "6" 19 "9" 22 "12") ///
-		 xtitle("Months relative to poaching event") ///
-		 ytitle("Share of new hires" "from the same firm as poached worker") ///
-		 name(spv, replace)
-		 
-		 graph export "${results}/pred2_numno_`m'.pdf", as(pdf) replace
-		 
 	}	 

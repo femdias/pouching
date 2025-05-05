@@ -158,42 +158,7 @@
    
 			graph export "${results}/wage_dest_hire_mgr_w_pdf.pdf", as(pdf) replace
 			
-			
-	/*		
-			
-	// figure: wage (winsorize top and bottom .1%) + RESIDUALIZED
 	
-	keep if group != .
-	
-		// residualize wages
-		
-		gen exp = age - educ_years - 6
-		replace exp = 0 if exp <= 0
-		
-		reg wage_real_ln fe_worker exp
-		predict wage_resid_ln, resid
-		
-		winsor wage_resid_ln, gen(wage_resid_ln_winsor) p(0.001)
-		
-		*ksmirnov wage_resid_ln_winsor, by(group)
-	
-		distplot wage_resid_ln_winsor, over(group) xtitle("Ln salary (2008 R$) - residualized ") ///
-		ytitle("Cumulative probability") plotregion(lcolor(white)) ///
-		lcolor(black black) lpattern(solid dash) lwidth(medthick medthick) ///
-		legend(order(2 1) region(lstyle(none)))
-   
-			graph export "${results}/wage_dest_hire_mgr_w_resid.pdf", as(pdf) replace
-		
-		// note: bwidth = .12 is ~1.5 times the default bandwidth
-		twoway kdensity wage_resid_ln_winsor if group == 1, lcolor(black) bwidth(.12) lpattern(solid) lwidth(medthick) || ///
-		kdensity wage_resid_ln_winsor if group == 2, lcolor(black) bwidth(.12) lpattern(dash) lwidth(medthick) ///
-		xtitle("Ln salary (2008 R$) - residualized") ///
-		ytitle("Cumulative probability") plotregion(lcolor(white)) ///
-		legend(order(2 "Non-poached new managers" 1 "Poached managers") region(lstyle(none)))
-   
-			graph export "${results}/wage_dest_hire_mgr_w_pdf_resid.pdf", as(pdf) replace	
-			
-	*/		
 		
 	// regression
 	

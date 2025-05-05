@@ -1,0 +1,23 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{6}{c}}
+                &\multicolumn{6}{c}{Outcome: Manager ln(salary) at destination}               \\\cmidrule(lr){2-7}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   \\
+\midrule \\ \textbf{Origin firm}&            &            &            &            &            &            \\
+Size (ln \# empl)&    0.012** &    0.021***&    0.023***&    0.022***&    0.018** &    0.021***\\
+                &  (0.005)   &  (0.007)   &  (0.007)   &  (0.007)   &  (0.007)   &  (0.005)   \\
+Avg worker ability&    0.356***&    0.179*  &    0.171*  &    0.074   &    0.064   &    0.008   \\
+                &  (0.030)   &  (0.102)   &  (0.102)   &  (0.099)   &  (0.099)   &  (0.059)   \\
+Size (ln \# empl) $\times$ Avg worker ability&            &    0.029*  &    0.029*  &    0.038** &    0.041** &    0.046***\\
+                &            &  (0.016)   &  (0.016)   &  (0.016)   &  (0.016)   &  (0.010)   \\
+Manager tenure overlap&            &            &    0.129***&    0.100** &    0.100** &    0.114***\\
+                &            &            &  (0.041)   &  (0.040)   &  (0.040)   &  (0.026)   \\
+\\ \textbf{Manager controls} \\ Manager salary at origin &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Manager experience &            &            &            &   \cmark   &   \cmark   &   \cmark   \\
+Manager quality &            &            &            &   \cmark   &   \cmark   &   \cmark   \\
+\\ \textbf{Destination firm}  \\ Destination firm size (ln) &            &            &            &            &   \cmark   &   \cmark   \\
+Destination firm growth &            &            &            &            &   \cmark   &   \cmark   \\
+ \\ Obs         &     2854   &     2854   &     2854   &     2854   &     2854   &     5697   \\
+R-Squared       &    0.708   &    0.708   &    0.714   &    0.730   &    0.732   &    0.715   \\
+\end{tabular}
+}

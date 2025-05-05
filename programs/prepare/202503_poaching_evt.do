@@ -8,43 +8,9 @@
 *--------------------------*
 * BUILD
 *--------------------------*
-
-	// adding sample restrinction and event types
-
-	foreach e in dir spv emp {
 	
-		use "${data}/202503_poach_ind_`e'", clear
+	use "${data}/202503_poach_ind", clear
 		
-		// keep only events with positive employment in all months
-		merge m:1 event_id using "${data}/sample_selection_`e'", keep(match) nogen
-		
-		// identify event types using origin occupation
-		
-		gen o_pc_dir = 0
-		gen o_pc_spv = 0
-		gen o_pc_emp = 0
-		
-		label var o_pc_dir "Poached individual is a director at origin firm"
-		label var o_pc_spv "Poached individual is a supervisor at origin firm"
-		label var o_pc_emp "Poached individual is a worker at origin firm"
-		
-		replace o_pc_`e' = 1 // in looping over `e', origin type must be `e'
-		
-		// identifying event types using destination occupation --- I'M DROPPING EVENTS WITH MULTIPLE TYPES. REVIEW THIS.
-		
-		merge m:1 event_id using "${data}/evt_type_m_`e'", keep(match) nogen
-		
-		// saving
-		save "${temp}/poaching_evt_`e'", replace
-	
-}
-
-	// combining the three previous data set
- 
-	use "${temp}/poaching_evt_dir", clear
-	append using "${temp}/poaching_evt_spv" 
-	append using "${temp}/poaching_evt_emp"
-	
 	// event type variable
 	
 	gen type = .

@@ -99,27 +99,87 @@
 	
 	// event-level data set
 	*do "${prepare}/202503_poach_ind"
-	*do "${prepare}/202503_poach_ind_LOOP1"
-	*do "${prepare}/202503_poach_ind_LOOP2"
-	*do "${prepare}/202503_poach_ind_LOOP3"
-	*do "${prepare}/202503_poach_ind_LOOP4"
-	*do "${prepare}/202503_poach_ind_LOOP5"
-	*do "${prepare}/202503_poach_ind_LOOP6"
-	*do "${prepare}/202503_poach_ind_LOOP7"
-	
-	// identifying event types (using destination occupation)
-	*do "${prepare}/evt_type_m"
 	
 	// imposing sample selection restrictions to the analysis
-	*do "${prepare}/sample_selection"
+	*do "${prepare}/202503_sample_selection"
 	
-// PART IV: constructing main data sets
+// PENDING TO BE ORGANIZED AND EVALUATED	
+	
 
+	
+	// another event-level data set
 	*do "${prepare}/202503_poaching_evt"
 
 *-----------------------------------------*
 * ANALYSIS (FINAL) - FELIPE: USE THIS
 *-----------------------------------------*
+
+
+
+*************** Version from 21th April 2025 
+* Table1: summarystats.tex
+	*do "${analysis}/final_sumstats.do
+
+**Table2: pred2_reg.tex
+**Figure4: es_baseline.pdf
+**FigureC4: es_baseline_n
+**FigureC11: pred2_mainyes_median_llm50.pdf
+**FigureC12: pred2_mainno_median_llm50.pdf
+	*do "${analysis}/final_pred2.do
+
+**Table3: pred3_reg.tex
+**Figure5: wage_dest_hire_mgr_w_pdf.pdf
+**FigureC5: wage_dest_hire_mgr_w_cdf.pdf
+	*do "${analysis}/final_pred3.do
+
+**Table4: pred4.tex
+**TableC2: pred4_alt.tex
+	*do "${analysis}/final_pred4.do
+
+**Table5: pred5_20250421.tex
+*do "${analysis}/final_pred5_20250421
+
+**Table6: pred6.tex
+	*do "${analysis}/final_pred6.do
+
+**Table7: pred7_reg_extra_v3.tex
+	*do "${analysis}/final_pred7.do
+
+**Table8: alternatives.tex
+**TableC4: alternatives_alt.tex
+	*do "${analysis}/final_alternatives.do
+
+**TableC1: sumstats_firm_size.tex
+	*do "${analysis}/sumstats_share_firm_size.do
+	
+*TableC3: pred5_alt.tex
+**FigureC7: final_pred5_tenure_overlap_full_pdf.pdf
+	*do "${analysis}/final_pred5.do
+
+**Figure6: prod_od_w_pdf.pdf
+**Figure7: destgrowth.pdf
+**FigureC8: prod_od_w_cdf.pdf
+	*do "${analysis}/final_pred1.do
+
+**Figure8: quality_dest_hire_w_pdf.pdf
+**FigureC9: quality_dest_hire_w_cdf.pdf
+	*do "${analysis}/final_pred7.do
+
+**FigureC3: es_baseline_dir
+	*do "${analysis}/es_baseline.do
+
+**FigureC6: quality_dest_hire_mgr_winsor.pdf
+**FigureC10: wage_dest_hire_winsor.pdf
+	*do "${analysis}/quality_dest_hire.do
+
+
+
+
+
+
+
+
+
 
 // MAIN ANALYSIS
 
@@ -177,63 +237,7 @@
 * ANALYSIS (202503 WORK) -- FABIANO'S STUFF
 *-----------------------------------------*
 
-// MAIN ANALYSIS
 
-	// imposing restrictions and listing the events we want
-	*do "${analysis}/eventlist"	
-	
-	// exhibits
-	*do "${analysis}/202503_sumstats"
-	*do "${analysis}/202503_pred1"
-	*do "${analysis}/202503_pred2"
-	*do "${analysis}/final_pred3"
-	*do "${analysis}/202503_pred4"
-	*do "${analysis}/202503_pred5"
-	*do "${analysis}/202503_pred6"
-	*do "${analysis}/final_pred7"
-	*do "${analysis}/final_alternatives"
-	
-	// other analyses
-	*do "${analysis}/final_preddelta"
-	
-// TESTING OTHER HYPOTHESES
-
-	// hypothesis: managers are the owners of the destination firm (spinoffs)
-	*do "${analysis}/test_spinoffs"
-	
-	// hypothesis: tenure overlap + strength of information 
-	*do "${analysis}/summary_tenureoverlap"
-	
-// ROBUSTNESS: RESULTS WITHOUT RECLASSIFICATIONS 	
-
-	// imposing restrictions and listing the events we want
-	*do "${analysis}/eventlist_noreclass"
-	
-	// organing exhibits before submission
-	*do "${analysis}/final_pred1_noreclass"
-	*do "${analysis}/final_pred2_noreclass"
-	*do "${analysis}/final_pred3_noreclass"
-	*do "${analysis}/final_pred4_noreclass"
-	*do "${analysis}/final_pred5_noreclass"
-	*do "${analysis}/final_pred6_noreclass"
-	*do "${analysis}/final_pred7_noreclass"
-	*do "${analysis}/final_alternatives_noreclass"
-
-// ROBUSTNESS: TABLES WITH 0 RAIDES
-
-	*do "${analysis}/final_pred4_zero"
-	*do "${analysis}/final_pred5_zero"
-	*do "${analysis}/final_alternatives_zero"
-	
-	*do "${analysis}/final_pred4_zeroonly"
-	*do "${analysis}/final_pred5_zeroonly"
-	*do "${analysis}/final_alternatives_zeroonly"
-
-
-
-
-
-	
 
 
 

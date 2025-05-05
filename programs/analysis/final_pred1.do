@@ -150,171 +150,13 @@ set seed 6543
 		
 		graph export "${results}/prod_od_w_pdf.pdf", as(pdf) replace
 		
-	/* ARCHIVE	
-	
-		// using the unwinsorized version
-		
-		twoway kdensity fe_firm if or_dest == 1, n(50) bwidth(.06) lcolor(black) lpattern(solid) lwidth(medthick) || ///
-		kdensity fe_firm if or_dest == 2, n(50)  bwidth(.06) lcolor(black) lpattern(dash) lwidth(medthick) ///
-		xtitle("Firm productivity proxy (wage premium)") ///
-		ytitle("Density") plotregion(lcolor(white)) ///
-		legend(order(2 "Origin" 1 "Destination") region(lstyle(none)))
-	
-	*/	
-	
-*--------------------------*
-* PANEL A - REGRESSION
-*--------------------------*
 
-/*
-
-set seed 6543
-
-// events "spv --> spv"
-		
-	use "${data}/poach_ind_spv", clear
-	
-	// positive employment in all months
-	merge m:1 event_id using "${data}/sample_selection_spv", keep(match) nogen
-	
-	// identifying event types (using destination occupation) -- we need this to see what's occup in dest
-	merge m:1 event_id using "${data}/evt_type_m_spv", keep(match) nogen
-	
-	// keep only people that became spv
-	keep if type_spv == 1
-	
-	// generating identifier
-	gen spv = 1
-	
-	// saving
-	save "${temp}/pred1_spv_spv", replace
-
-// events "spv --> emp"
-		
-	use "${data}/poach_ind_spv", clear
-	
-	// positive employment in all months
-	merge m:1 event_id using "${data}/sample_selection_spv", keep(match) nogen
-	
-	// identifying event types (using destination occupation) -- we need this to see what's occup in dest
-	merge m:1 event_id using "${data}/evt_type_m_spv", keep(match) nogen
-	
-	// keep only people that became emp
-	keep if type_emp == 1
-	
-	// generating identifier
-	gen spv = 2
-		
-	save "${temp}/pred1_spv_emp", replace
-	
-// events "emp --> spv"
-		
-	use "${data}/poach_ind_emp", clear
-	
-	// positive employment in all months
-	merge m:1 event_id using "${data}/sample_selection_emp", keep(match) nogen
-	
-	// identifying event types (using destination occupation) -- we need this to see what's occup in dest
-	merge m:1 event_id using "${data}/evt_type_m_emp", keep(match) nogen
-	
-	// keep only people that became spv
-	keep if type_spv == 1
-	
-	// generating identifier
-	gen spv = 3
-	
-	// saving	
-	save "${temp}/pred1_emp_spv", replace	
-
-// combining events and keeping what we need
-
-	use "${temp}/pred1_spv_spv", clear
-	append using "${temp}/pred1_spv_emp" 
-	append using "${temp}/pred1_emp_spv" 
-	
-	merge m:1 spv event_id using "${temp}/eventlist", keep(match)
-
-	// labeling event typs		
-	la def spv 1 "spv-spv" 2 "spv-emp" 3 "emp-spv", replace
-	la val spv spv
-	
-	// organizing some variables
-	// note: Destination = 1, Origin = 2 
-	
-	// fe_firm_d
-	replace fe_firm_d = -99 if fe_firm_d==.
-	g fe_firm_d_m = (fe_firm_d==-99)
-			
-	// wage premium: productivity proxy
-	rename fe_firm_o fe_firm2
-	rename fe_firm_d fe_firm1
-				
-	replace fe_firm1 = . if fe_firm1==-99
-	replace fe_firm2 = . if fe_firm2==-99
-
-	// reshaping data set
-	egen unique_id = group(event_id spv)
-	reshape long fe_firm, i(unique_id) j(or_dest)
-	
-	la def or_dest 1 "Destination" 2 "Origin"
-	la val or_dest or_dest
-	
-		// for this regression, let's invert origin/destination
-		gen destination = (or_dest == 1)
-		
-		label var destination "Destination firm"
-		
-	// pc_fe
-	replace pc_fe = -99 if pc_fe==.
-	g pc_fe_m = (pc_fe==-99)
-	
-	// pc_exp_ln -- NOTE: WE SHOULD NOT HAVE MISSING VALUES HERE
-	replace pc_exp_ln = -99 if pc_exp_ln==.
-	g pc_exp_m =(pc_exp_ln==-99)
-	
-	// regression
-	
-	eststo col1: reg fe_firm destination, rob
-	
-	eststo col2: reg fe_firm destination pc_wage_o_l1, rob
-	
-	eststo col3: reg fe_firm destination pc_wage_o_l1 pc_exp_ln pc_exp_m, rob
-	
-	eststo col4: reg fe_firm destination pc_wage_o_l1 pc_exp_ln pc_exp_m pc_fe pc_fe_m, rob
-	
-	// display table
-	
-	esttab  col1 col2 col3 col4,  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label ///   
-		keep(destination) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///  only display standard errors 
-		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\textbf{Manager controls} \\ Origin wage = pc_wage_o_l1" ///
-		"Experience = pc_exp_ln" "Manager quality = pc_fe"  ///
-		, labels("\cmark" ""))
-	
-	// save table
-
-	esttab col1 col2 col3 col4 using "${results}/pred1_reg.tex", booktabs  /// 
-		replace compress noconstant nomtitles nogap collabels(none) label /// 
-		refcat(destination "\midrule", nolabel) ///
-		mgroups("Outcome: Firm productivity proxy (wage premium)",  /// 
-		pattern(1 0 0 0) prefix(\multicolumn{@span}{c}{) suffix(}) span erepeat(\cmidrule(lr){@span})) ///    
-		keep(destination) ///
-		cells(b(star fmt(3)) se(par fmt(3))) ///    
-		stats(N r2 , fmt(0 3) label(" \\ Obs" "R-Squared")) ///
-		obslast nolines  starlevels(* 0.1 ** 0.05 *** 0.01) ///
-		indicate("\\ \textbf{Manager controls} \\ Manager salary at origin = pc_wage_o_l1" ///
-		"Manager experience = pc_exp_ln" "Manager ability = pc_fe"  /// 
-		, labels("\cmark" ""))	
-	
 *--------------------------*
 * PANEL B
 *--------------------------*
 
-/*
 
+/*
 set seed 6543
 
 // "spv --> spv" events
@@ -370,7 +212,7 @@ set seed 6543
 	gen spv = 3
 
 	save "${temp}/destgrowth_emp", replace
-			
+*/			
 // combining everything and keeping main events 
 
 	use "${temp}/destgrowth_spv", clear
@@ -411,4 +253,4 @@ set seed 6543
 		
 		graph export "${results}/destgrowth.pdf", as(pdf) replace
 		
-*/		
+		

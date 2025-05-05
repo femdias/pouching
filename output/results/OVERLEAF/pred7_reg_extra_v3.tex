@@ -1,0 +1,15 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+                &\multicolumn{2}{c}{Worker ability}&\multicolumn{2}{c}{Retained 1 yr}&\multicolumn{2}{c}{Retained 2 yrs}&\multicolumn{2}{c}{Retained 3 yrs}\\\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+                &\multicolumn{1}{c}{(1)}   &\multicolumn{1}{c}{(2)}   &\multicolumn{1}{c}{(3)}   &\multicolumn{1}{c}{(4)}   &\multicolumn{1}{c}{(5)}   &\multicolumn{1}{c}{(6)}   &\multicolumn{1}{c}{(7)}   &\multicolumn{1}{c}{(8)}   \\
+\midrule        &            &            &            &            &            &            &            &            \\
+Raided new hire &    0.100***&    0.027***&    0.201***&    0.193***&    0.163***&    0.155***&    0.135***&    0.128***\\
+                &  (0.006)   &  (0.004)   &  (0.003)   &  (0.003)   &  (0.003)   &  (0.003)   &  (0.003)   &  (0.003)   \\
+\\ \textbf{Controls} \\ Dest firm FE&   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   &   \cmark   \\
+Worker Experience&            &   \cmark   &            &   \cmark   &            &   \cmark   &            &   \cmark   \\
+\\ Mean LHS     &   -0.437   &   -0.437   &    0.474   &    0.474   &    0.277   &    0.277   &    0.182   &    0.182   \\
+Obs             &    95837   &    95837   &   241918   &   241918   &   212040   &   212040   &   174552   &   174552   \\
+R-Squared       &    0.229   &    0.540   &    0.251   &    0.253   &    0.278   &    0.281   &    0.279   &    0.282   \\
+\end{tabular}
+}

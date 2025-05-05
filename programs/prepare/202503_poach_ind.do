@@ -9,6 +9,8 @@
 * BUILD
 *--------------------------*
 
+/*
+
 // variables from cowork_panel_m
 
 	// this panel will be constructed separately for each cohort
@@ -31,12 +33,12 @@
 		gen cnae20_2d = substr(cnae20_class_str, 1, 2)
 		destring cnae20_2d, force replace
 		
-		gen cnae_o_temp = cnae20_2d if ym_rel == -12
+		gen cnae_o_temp = cnae20_2d if ym_rel == -12 & pc_individual == 1
 		egen cnae_o = max(cnae_o_temp), by(eventid)
-		
-		gen cnae_d_temp = cnae20_2d if ym_rel == 0
+			
+		gen cnae_d_temp = cnae20_2d if ym_rel == 0 & pc_individual == 1
 		egen cnae_d = max(cnae_d_temp), by(eventid)
-		
+			
 		drop cnae20_class_str cnae20_2d cnae_o_temp cnae_d_temp
 		
 		// o_avg_worker_naive_fe
@@ -273,8 +275,6 @@
 	
 	}
 	
-	/*
-	
 	// appending monthly files
 
 	clear 
@@ -286,8 +286,6 @@
 	}
 	
 	save "${temp}/from_cowork_panel_m", replace
-	
-	*/
 
 // variables from dest_panel_m
 	
@@ -338,8 +336,6 @@
 	
 	// appending monthly files
 	
-	/*
-	
 	clear
 		
 	foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {	
@@ -349,12 +345,8 @@
 	}
 	
 	save "${temp}/from_dest_panel_m", replace
-	
-	*/
 			
 // variables from evt_panel_m
-
-	/* // ISSO AQUI JÁ FOI RODADO!!!!!!!!!!!
 	
 	use "${data}/202503_evt_panel_m", clear
 	
@@ -390,52 +382,44 @@
 	// save temporary file
 	save "${temp}/from_evt_panel_m", replace 
 	
-	*/
-	
 // constructing the panel directly
 
-	// LATER -- THIS SHOULD BE PRETTY STRAIGHTFORWARD WHEN THE ABOVE IS COMPLETE
+	use "${data}/202503_evt_m", clear 
 	
-	/*
+	drop if eventid == . // REMOVE THIS ONCE CORRECTED IN THE DO-FILE THAT ORIGINATES THIS
+	
+	// moving to the event level
+	
+	drop pc_dir pc_spv pc_emp pc_d_dir pc_d_spv pc_d_emp pc_cpf
+	
+	egen unique = tag(eventid)
+	keep if unique == 1
+	drop unique
 
-	foreach e in spv dir emp {
-
-	use "${data}/evt_m_`e'", clear 
-	
-	// dropping unnecessary variable
-	drop pc_`e'
-	
-	// period restriction
-	keep if pc_ym >= ym(2010,1)
-	
 	// merging with the previous data sets
-	merge 1:1 event_id using "${temp}/from_cowork_panel_m_`e'", nogen
-	merge 1:1 event_id using "${temp}/from_dest_panel_m_`e'", nogen
-	merge 1:1 event_id using "${temp}/from_evt_panel_m_`e'", nogen
+	merge 1:1 eventid using "${temp}/from_cowork_panel_m", nogen
+	merge 1:1 eventid using "${temp}/from_dest_panel_m", nogen
+	merge 1:1 eventid using "${temp}/from_evt_panel_m", nogen
 	
 	// merging with firm FE --- UPDATE THIS USING THE NEW AKM EFFECTS!
 	
-		// origin
-			
-		tostring o_plant, generate(plant_id) format(%014.0f)
-		gen firm_id = substr(plant_id, 1, 8)
-		destring firm_id, force replace
-			
-		merge m:1 firm_id using "${AKM}/AKM_2003_2008_Firm", keep(master match) nogen
-		rename fe_firm fe_firm_o
-			
-		drop firm_id plant_id
+		// origin firm FE
+		tostring o_plant, generate(o_plant_str) format(%014.0f)
+		gen firm_id = substr(o_plant_str, 1, 8)
+		destring firm_id, replace force
+		merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE", keep(master match) nogen
+		rename naive_FE_firm o_firm_naive_fe
+		rename akm_FE_firm o_firm_akm_fe
+		drop o_plant_str firm_id
 		
-		// destination
-		
-		tostring d_plant, generate(plant_id) format(%014.0f)
-		gen firm_id = substr(plant_id, 1, 8)
-		destring firm_id, force replace
-			
-		merge m:1 firm_id using "${AKM}/AKM_2003_2008_Firm", keep(master match) nogen
-		rename fe_firm fe_firm_d
-			
-		drop firm_id plant_id
+		// destination firm FE
+		tostring d_plant, generate(d_plant_str) format(%014.0f)
+		gen firm_id = substr(d_plant_str, 1, 8)
+		destring firm_id, replace force
+		merge m:1 firm_id using "${AKM}/AKM_2003_2008_both_firmFE", keep(master match) nogen
+		rename naive_FE_firm d_firm_naive_fe
+		rename akm_FE_firm d_firm_akm_fe
+		drop d_plant_str firm_id
 		
 	// creating additional variables
 	
@@ -453,41 +437,130 @@
 		
 	// labeling variables
 	
-	cap la var cnae_d 			"CNAE of destination firm"
-	cap la var cnae_o 			"CNAE of origin firm"
-	cap la var d_avg_fe_worker 		"Avg. worker AKM FE at dest. firm at -0" 
-	cap la var d_growth 			"Destination firm growth rate between -12 and -1"            
-	cap la var d_hire 			"Number of hires at dest. firm after 0" 
-	cap la var d_plant			"Destination plant ID"
-	cap la var d_size 			"Size of destination firm"      
-	cap la var d_size_ln 			"Ln of size of destination firm"  
-	cap la var event_id 			"Event ID"
-	cap la var fe_firm_d 			"Destination firm AKM FE"    
-	cap la var fe_firm_o 			"Origin firm AKM FE"     
-	cap la var o_avg_fe_worker 		"Avg. worker AKM FE at origin firm at -12"
-	cap la var o_plant			"Origin plant ID"
-	cap la var o_size 			"Size of origin firm"       
-	cap la var pc_age 			"Age of poached individual"       
-	cap la var pc_exp 			"Poached individual experience"       
-	cap la var pc_exp_ln 			"Ln of experience of poached individual"   
-	cap la var pc_fe  			"AKM FE of poached individual"       
-	cap la var pc_wage_d 			"Ln wage of poached individual at dest. firm"
-	cap la var pc_wage_d_lvl 		"Wage of poached individual at dest. firm (level)"
-	cap la var pc_wage_o_l1 		"Ln wage of poached individual at origin firm in -1"  
-	cap la var pc_wage_o_l1_lvl 		"Wage of poached individual at origin firm in -1 (level)"
-	cap la var pc_ym 			"Poaching cohort"
-	cap la var ratio_cw_new_hire 		"Destination firm (# raided workers / # new hires)"		
-	cap la var rd_coworker_fe 		"Avg. AKM FE of raided coworkers"   
-	cap la var rd_coworker_n 		"Number of raided coworkers"
-	cap la var rd_coworker_n_ln 		"Ln of number of raided coworkers"	
-	cap la var rd_coworker_wage_d_lvl 	"Wage of raided coworker at dest. firm (level)" 
-	cap la var rd_coworker_wage_o_lvl 	"Wage of raided coworker at origin firm (level)" 
+	la var cnae_d 			"CNAE of destination firm"
+	la var cnae_o 			"CNAE of origin firm"
+	la var d_avg_worker_naive_fe 	"Avg. worker naive FE at dest. firm at -0" 
+	la var d_avg_worker_akm_fe 	"Avg. worker AKM FE at dest. firm at -0" 
+	la var d_growth 		"Destination firm growth rate between -12 and -1"            
+	la var d_hire 			"Number of hires at dest. firm after 0" 
+	la var d_plant			"Destination plant ID"
+	la var d_size 			"Size of destination firm"      
+	la var d_size_ln 		"Ln of size of destination firm"  
+	la var eventid 			"Event ID"
+	la var d_firm_naive_fe		"Destination firm naive FE" 
+	la var d_firm_akm_fe		"Destination firm AKM FE" 
+   	la var o_firm_naive_fe		"Origin firm naive FE"
+	la var o_firm_akm_fe		"Origin firm AKM FE"  
+	la var o_avg_worker_naive_fe 	"Avg. worker naive FE at origin firm at -12"
+	la var o_avg_worker_akm_fe	"Avg. worker AKM FE at origin firm at -12"
+	la var o_plant			"Origin plant ID"
+	la var o_size 			"Size of origin firm"       
+	la var pc_age 			"Age of poached individual"       
+	la var pc_exp 			"Poached individual experience"       
+	la var pc_exp_ln 		"Ln of experience of poached individual" 
+	la var pc_worker_naive_fe	"Naive FE of poached individual"
+	la var pc_worker_akm_fe  	"AKM FE of poached individual"       
+	la var pc_wage_d 		"Ln wage of poached individual at dest. firm"
+	la var pc_wage_d_lvl 		"Wage of poached individual at dest. firm (level)"
+	la var pc_wage_o_l1 		"Ln wage of poached individual at origin firm in -1"  
+	la var pc_wage_o_l1_lvl 	"Wage of poached individual at origin firm in -1 (level)"
+	la var pc_ym 			"Poaching cohort"
+	la var ratio_cw_new_hire 	"Destination firm (# raided workers / # new hires)"
+	la var rd_coworker_naive_fe 	"Avg. naive FE of raided coworkers"   
+	la var rd_coworker_akm_fe 	"Avg. AKM FE of raided coworkers"   
+	la var rd_coworker_n 		"Number of raided coworkers"
+	la var rd_coworker_n_ln 	"Ln of number of raided coworkers"	
+	la var rd_coworker_wage_d_lvl 	"Wage of raided coworker at dest. firm (level)" 
+	la var rd_coworker_wage_o_lvl 	"Wage of raided coworker at origin firm (level)" 
 	
 	// saving
-	save "${data}/202503_poach_ind_`e'", replace
+	save "${data}/202503_poach_ind", replace
+	
+// adding more variables
+
+	use "${data}/202503_poach_ind", clear
+	
+	// event type variable
+	merge 1:1 eventid using "${data}/202503_evttype", nogen
+	
+	// tagging top earners in spv-emp and emp-spv
+	xtile waged_spvemp = pc_wage_d    if type==6, nq(10)
+	xtile waged_empspv = pc_wage_o_l1 if type==8, nq(10)
+	
+	// saving
+	save "${data}/202503_poach_ind", replace
+	
+*/	
+	
+// tenure overlap: creating measure
+
+	foreach ym of numlist 601/611 613/623 625/635 637/647 649/659 661/671 673/683 {	
+		
+	use "${data}/202503_cowork_panel_m_`e'/202503_o_cw_`ym'", clear	
+	
+		// stat 1: number of employees they overlap with for the full tenure
+			
+			// poached manager tenure when poached
+			gen tenure_pc_temp = tenure_ym_pc if ym_rel == -1
+			egen tenure_pc = max(tenure_pc_temp), by(event_id)
+			replace tenure_pc = . if n_pc != 1 
+			drop tenure_pc_temp
+			
+			// who they've overlap with the entire time
+			gen full_overlap = (tenure_pc == tenure_overlap) 
+			replace full_overlap = . if tenure_pc == . | tenure_overlap == .
+		
+		// stat 2: average tenure overlap
+		* we already have a variable for this: tenure_overlap
+		
+		// stat 3: average tenure overlap with individuals who were raided
+		gen tenure_overlap_raided = tenure_overlap if raid_individual == 1
+		
+		// stat 4: number of employees they overlap with for at least 1 year
+		gen tenure_overlap_1y = ((tenure_overlap >= 12) & (tenure_overlap != .))
+		replace tenure_overlap_1y = . if tenure_pc == . | tenure_overlap == .
+		
+		// collapse
+		
+		drop if pc_individual == 1
+		egen unique = tag(event_id cpf)
+		keep if unique == 1
+		
+		collapse (mean) full_overlap tenure_overlap tenure_overlap_raided tenure_overlap_1y ///
+			(sum) full_overlap_sum=full_overlap tenure_overlap_sum=tenure_overlap ///
+			tenure_overlap_raided_sum=tenure_overlap_raided ///
+			tenure_overlap_1y_sum=tenure_overlap_1y, by(event_id)
+			
+		// the sum should be missing if the average was not computed
+		replace full_overlap_sum = . if full_overlap == .
+		replace tenure_overlap_sum = . if tenure_overlap == .
+		replace tenure_overlap_raided_sum = . if tenure_overlap_raided == .
+		replace tenure_overlap_1y_sum = . if tenure_overlap_1y == .
+		
+		
+		save "${temp}/tenureoverlap_`e'_`ym'", replace
+		
+		}
+
+	
+	// appending by event type
+	
+	foreach e in spv emp dir {
+	
+	clear
+	
+	forvalues ym=528/683 {
+	
+		cap append using "${temp}/tenureoverlap_`e'_`ym'"
 	
 	}
-		
+	
+	save "${temp}/tenureoverlap_`e'", replace
+	
+	}
+
+// tenure overlap: merging with poach_ind
+	
 *--------------------------*
 * EXIT
 *--------------------------*
